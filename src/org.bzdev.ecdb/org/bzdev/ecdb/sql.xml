@@ -1,0 +1,1542 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties> 
+  <comment><![CDATA[
+    SQL statements for setting up schemas and tables.  Each  key names
+    a particular SQL statement (or statements) and a database - SQL is
+    not implemented consistently.
+    
+    The requirements for properties beginning with "table." are:
+
+      * A schema named ECSCHEMA (the schema name will be changed to
+        a user-specified one when this properties file is loaded). The
+	tables in this schema contain columns that can be modified
+	as desired with one exception: the column 'domain'
+	in the table DATASCHEMA.Owner cannot be changed after a row
+	is inserted. Attempts to change it will fail. The Derby-specific
+	SQL enforces this using a trigger (the trigger is invoked recursively
+	but there is a Derby-imposed depth limit of 16 that stops the
+	recursion).
+
+      * A schema named CNTRLSCHEMA (the schema name will be changed to
+        a user-specified one when this properties file is loaded).
+	The tables in this schema contain columns (e.g., modTime) that
+	are maintained through the use of triggers.
+
+      * A table named EventCal.Domain used to store the domain names
+       of gateways that relay email messages. When the email address
+       <PHONE_NUMBER>;<CARRIER_DOMAIN> is used for a suitable choice
+       of <CARRIER_DOMAIN>, the email will be converted to an mms
+       message. The phone number must usually be one using the wireless
+       carrier's service. The columns are as follows.
+	    - DOMAINID an ID for each entry.
+	    - DOMAIN is the domain name to use in an email address
+	      with a phone number as a user name
+	    - CARRIER is the name of the wireless carrier (e.g., ATT
+	      or Verizon) and may be null if the carrier is not known
+	While one can find services that will forward the email or
+        look up the carrier given the email, there is typically a charge
+        to use such services.
+      * A table named EventCal.UserInfo that assigns a unique ID
+	to each user and allows one to look up the user's first name,
+	last name, email address, a semiprivate string used as a
+	component of an iCalendar UID field, and a status field that
+	indicates if a user is active or not. The columns are as
+	follows.
+
+        -  USERID is a unique ID for each user (i.e., for each row in this
+	   table).
+	- FIRSTNAME is the user's first name.
+	- LASTNAME is the user's last name.
+	- EMAIL address is the user's email address (null if there is none).
+	- CELLNUMBER is the user's cell phone number (null if there is none).
+	- CARRIER is the name of the user's wireless carrier (e.g., ATT or
+          Verizon).
+	- UID is a portion of a unique identifier specific to a given user.
+	- STATUS is a string with the values ACTIVE, NOTACTIVE, or CANCELLED.
+
+      * A table named EventCal.Owner. An owner denotes both an organization,
+	a general type of event, and a location. The columns are as follows.
+	- OWNERID is a unique ID for each owner (i.e., for each row in this
+	  table).
+	- SUMMARY is the summary text for an iCalendar event naming a
+	  general class of events.
+	- DOMAIN is a domain name associated with the owner and used in
+          generating iCalendar UID fields.   
+
+      * A table named EventCal.Location that lists event locations.
+        The columns are the following.
+	- LOCATIONID is a unique identifier (an integer) that is the
+          primary key for the table.
+	- LOCATION is a string giving the name of the location.
+
+      * A table named EventCal.FirstAlarm used to determine the 
+        first-alarm times for a user given a specified
+	starting date and time and the event owner.  The columns are 
+        as follows:
+	- USERID is the userID in the User table for a specific user.
+	- OWNERID is the owner ID to denote the general class of events.
+	- EVENTTIME is the time of day an event starts.
+	- ALARMTIME is thetime at which an alarm should trigger.
+	- WEEKDAY is TRUE if the event is on a weekday and FALSE for a weekend.
+	- FOREMAIL is TRUE if the alarm is appropriate for email and FALSE
+          otherwise.
+	- FORPHONE isTRUE if the alarm is appropriate for a phone and FALSE
+          otherwise.
+
+      * A table named EventCal.SecondAlarm used to determine the 
+	second-alarm times for an event. The columns are as follows:
+	- USERID the userID in the User table for a specific user.
+	- OWNERID the owner ID to denote the general class of events.
+	- OFFSET the offset for the alarm in minutes from the start of an event.
+	- FOREMAIL is TRUE if the alarm is appropriate for email and FALSE
+	  otherwise.
+	- FORPHONE is TRUE if the alarm is appropriate for a phone and FALSE
+	  otherwise.
+
+      * A table named EventCal.Event. This contains common data for 
+	a sequence of possibly repeating events that share a common
+	description and owner.The columns are as follows:
+	- EVENTID is a unique id for each event  (i.e., for each row in this
+	  table)
+	- OWNERID is the owner ID to denote the general class of events.
+	- DESCRIPTION is a description of this event (typically a title).
+	- CREATETIME is the time at which this event was created.
+	- MODTIME is the last time at which this event was modified.
+
+      * A table named EventCal.Instance that describes instances of an
+        event - basically repetitions of the same event at differing times.
+	Its columns are as follows:
+	- INSTID is a unique id for each instance  (i.e., for each row in
+	  this  table).
+	- EVENTID the unique ID for the event (the primary key for a row
+	  in the event table).
+	- SEQNO is a monotonically increasing sequence number, incremented
+	  each time a row is updated.
+	- STARTDATE the date at which this instance of the event starts.
+	- STARTTIME the time of day at which this instance of the event starts.
+	- ENDDATE the date at which this instance of the event ends.
+	- ENDTIME the time of day at which this instance of the event ends.
+	- MODTIME the last date/time at which this event was modified.
+	- UID a portion of the iCalendar UID field associated with this instance
+          of the event.
+
+      * A table named EventCal.Attendee for users attending an instance
+        of an event. The columns are as follows:
+	- USERID is the unique ID referencing a row in the User table.
+	- INSTANCEID is the unique ID referencing a row in the Instance table.
+	- EMAILSEQNO is the last sequence number used in an email message about
+	  this event.
+	- PHONESEQNO is the last sequence number used in a MMS message about
+	  this event.
+	- MODTIME is the last time at which this entry was modified
+	- STATE is one of ACTIVE, CANCELLING, or CANCELLED
+
+]]>
+  </comment>
+<!-- "'" (to balance single quotes in case emacs SQL mode is used) -->
+  <entry key="sqlShutdownState"></entry>
+  <entry key="sqlShutdownState.derby">XJ015, 08006</entry>
+  <entry key="init"></entry>
+  <entry key="initForAuth"></entry>
+  <entry key="addUser"></entry>
+  <entry key="initForRoles"></entry>
+
+  <entry key="initForAuth.derby"><![CDATA[
+CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY
+	('derby.authentication.native.passwordLifetimeMillis' '0');
+]]>
+  </entry>
+
+  <entry key="addUser.derby"><![CDATA[
+CALL SYSCS_UTIL.SYSCS_CREATE_USER('%1$s','%2$s');
+]]>
+  </entry>
+
+  <entry key="initForRoles.derby"><![CDATA[
+CALL SYSCS_UTIL.SYSCS_SET_DATABASE_PROPERTY('derby.database.sqlAuthorization',
+					    'TRUE');
+]]>
+  </entry>
+
+  <entry key="hasRoles.derby"><![CDATA[
+SELECT ROLEID FROM SYS.SYSROLES WHERE ROLEID = UPPER('ECADMIN');
+]]>
+  </entry>
+
+  <entry key="roles"><![CDATA[
+CREATE ROLE ECADMIN;
+CREATE ROLE ECOWNER;
+CREATE ROLE ECUSER;
+GRANT ECOWNER TO ECADMIN;
+GRANT ECUSER to ECADMIN;
+]]>
+  </entry>
+
+  <entry key="hasSchemas.derby"><![CDATA[
+SELECT SCHEMANAME FROM SYS.SYSSCHEMAS WHERE SCHEMANAME = UPPER('ECSCHEMA');
+]]>
+  </entry>
+
+  <entry key="schemas"><![CDATA[
+CREATE SCHEMA ECSCHEMA;
+]]>
+  </entry>
+
+  <entry key="tables"><![CDATA[
+
+CREATE TABLE ECSCHEMA.CountryPrefix(countryPrefix VARCHAR (9) NOT NULL
+					  CONSTRAINT countryprefix_pk
+						PRIMARY KEY,
+				       label VARCHAR(32) NOT NULL);
+
+CREATE TABLE ECSCHEMA.Carrier(carrierID INT GENERATED ALWAYS AS IDENTITY
+       	     				CONSTRAINT carrier_pk PRIMARY KEY,
+				 carrier VARCHAR(32) UNIQUE);
+
+CREATE TABLE ECSCHEMA.CarrierMap(countryPrefix VARCHAR(9) NOT NULL,
+				 carrierID INT NOT NULL,
+				 idomain VARCHAR(128),
+				 modTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				    CONSTRAINT carriermap_pk
+					PRIMARY KEY (countryPrefix, carrierID),
+				    CONSTRAINT carriermap_fk1
+					FOREIGN KEY(countryPrefix)
+					REFERENCES ECSCHEMA.CountryPrefix
+					ON DELETE CASCADE,
+				    CONSTRAINT carriermap_fk2
+					FOREIGN KEY(carrierID)
+					REFERENCES ECSCHEMA.Carrier
+					ON DELETE CASCADE);
+
+CREATE TRIGGER ECSCHEMA.carriermapTrigger1 AFTER UPDATE of idomain
+	ON ECSCHEMA.CarrierMap REFERENCING OLD AS tbl
+	FOR EACH ROW UPDATE ECSCHEMA.CarrierMap
+	SET modTime = CURRENT_TIMESTAMP
+	WHERE countryPrefix = tbl.countryPrefix AND carrierID = tbl.carrierID;
+
+CREATE TABLE ECSCHEMA.CellPhoneEmail(countryPrefix VARCHAR(9) NOT NULL,
+					cellNumber VARCHAR(16) NOT NULL,
+					emailAddr VARCHAR(128),
+					setByCarrier BOOLEAN NOT NULL
+					    DEFAULT FALSE,
+					modTime TIMESTAMP
+					    DEFAULT CURRENT_TIMESTAMP,
+					CONSTRAINT cellphoneemail_pk1
+					    PRIMARY KEY(countryPrefix,
+							cellNumber),
+					CONSTRAINT cellphoneemail_fk1
+					    FOREIGN KEY (countryPrefix)
+					    REFERENCES ECSCHEMA.CountryPrefix
+					    ON DELETE CASCADE);
+
+CREATE TRIGGER ECSCHEMA.cellphoneemailTrigger AFTER UPDATE OF
+	emailAddr, setByCarrier
+	ON ECSCHEMA.CellPhoneEmail REFERENCING OLD AS tbl
+	FOR EACH ROW UPDATE ECSCHEMA.CellPhoneEmail
+	SET modTime = CURRENT_TIMESTAMP
+	WHERE countryPrefix = tbl.countryPrefix	AND cellNumber = tbl.cellNumber;
+
+
+CREATE TABLE ECSCHEMA.UserInfo(userID INT GENERATED ALWAYS AS IDENTITY
+				CONSTRAINT userinfo_pk PRIMARY KEY,
+                              firstName VARCHAR(64), lastName VARCHAR(64),
+			      lastNameFirst BOOLEAN NOT NULL DEFAULT FALSE,
+			      title VARCHAR(32),
+                              emailAddr VARCHAR(256),
+			      countryPrefix VARCHAR(9) DEFAULT '1',
+       	     	              cellNumber VARCHAR(16),
+			      carrierID INT,
+			      status VARCHAR(9) NOT NULL DEFAULT 'ACTIVE'
+				CONSTRAINT userinfo_ch1
+				  CHECK ((status = 'ACTIVE')
+					 OR (status = 'NOTACTIVE')
+					 OR (status = 'CANCELLED')),
+			      uid TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				CONSTRAINT userinfo_fk1
+				  FOREIGN KEY(countryPrefix)
+				  REFERENCES ECSCHEMA.CountryPrefix
+				  ON DELETE SET NULL,
+				CONSTRAINT userinfo_fk2
+				  FOREIGN KEY(carrierID)
+				  REFERENCES ECSCHEMA.Carrier
+				  ON DELETE SET NULL,
+				CONSTRAINT userinfo_ch2
+				  UNIQUE (firstName, lastName, emailAddr),
+				CONSTRAINT userinfo_ch3
+				  UNIQUE (firstName, lastName,
+					  countryPrefix, cellNumber));
+
+CREATE TRIGGER ECSCHEMA.userinfoTrigger AFTER INSERT
+	ON ECSCHEMA.UserInfo REFERENCING NEW AS usrtbl
+	FOR EACH ROW UPDATE ECSCHEMA.UserInfo SET uid = CURRENT_TIMESTAMP
+	WHERE userID = usrtbl.userID;
+
+CREATE TRIGGER ECSCHEMA.userinfoTrigger1 AFTER DELETE
+	ON ECSCHEMA.UserInfo REFERENCING OLD as usrtbl
+	FOR EACH ROW DELETE FROM ECSCHEMA.CellPhoneEmail
+	WHERE NOT EXISTS (SELECT * FROM ECSCHEMA.UserInfo
+			    WHERE usrtbl.countryPrefix = countryPrefix
+				  AND usrtbl.cellNumber = cellNumber);
+
+CREATE TRIGGER ECSCHEMA.userinfoTrigger2 AFTER UPDATE of cellNumber
+	ON ECSCHEMA.UserInfo REFERENCING OLD as usrtbl
+	FOR EACH ROW DELETE FROM ECSCHEMA.CellPhoneEmail
+	WHERE NOT EXISTS (SELECT * FROM ECSCHEMA.UserInfo
+			    WHERE usrtbl.countryPrefix = countryPrefix
+				  AND usrtbl.cellNumber = cellNumber);
+
+CREATE TRIGGER ECSCHEMA.userinfoTrigger3 AFTER UPDATE of countryPrefix
+	ON ECSCHEMA.UserInfo REFERENCING OLD as usrtbl
+	FOR EACH ROW DELETE FROM ECSCHEMA.CellPhoneEmail
+	WHERE NOT EXISTS (SELECT * FROM ECSCHEMA.UserInfo
+			    WHERE usrtbl.countryPrefix = countryPrefix
+				  AND usrtbl.cellNumber = cellNumber);
+
+CREATE TRIGGER ECSCHEMA.userinfoTrigger4 AFTER UPDATE of carrierID
+	ON ECSCHEMA.UserInfo REFERENCING OLD as usrtbl
+	FOR EACH ROW DELETE FROM ECSCHEMA.CellPhoneEmail
+	WHERE countryPrefix = usrtbl.countryPrefix
+	  AND cellNumber = usrtbl.cellNumber;
+
+CREATE TABLE ECSCHEMA.Owner(ownerID INT GENERATED ALWAYS AS IDENTITY
+                                 CONSTRAINT owner_pk PRIMARY KEY,
+			      label VARCHAR(32) UNIQUE NOT NULL,
+			      summary VARCHAR(64) NOT NULL,
+			      createTime TIMESTAMP NOT NULL
+				WITH DEFAULT CURRENT_TIMESTAMP,
+			      idomain VARCHAR(128) NOT NULL,
+			      modTime TIMESTAMP NOT NULL
+				WITH DEFAULT CURRENT_TIMESTAMP,
+			      CONSTRAINT owner_ch1
+			         CHECK (NOT (label = '[ ALL ]')));
+
+CREATE TRIGGER ECSCHEMA.ownerTrigger1 AFTER UPDATE OF summary, idomain
+	ON ECSCHEMA.Owner REFERENCING OLD AS OwnerTbl
+	FOR EACH ROW UPDATE ECSCHEMA.Owner
+		SET modTime = CURRENT_TIMESTAMP,
+		    idomain = OwnerTbl.idomain
+		WHERE OwnerTbl.ownerID = ownerID
+		    AND (OwnerTbl.summary <> summary
+			 OR OwnerTbl.idomain <> idomain);
+
+CREATE TABLE ECSCHEMA.PreEventDefault(userID INT NOT NULL,
+       	     				ownerID INT NOT NULL,
+					useDefault BOOLEAN NOT NULL
+					   DEFAULT FALSE,
+					CONSTRAINT preEventDefault_pk
+					    PRIMARY KEY (userID, ownerID),
+					CONSTRAINT preEventDefault_fk1
+					    FOREIGN KEY (userID)
+					    REFERENCES ECSCHEMA.UserInfo
+					    ON DELETE CASCADE,
+					CONSTRAINT preEventDefault_fk2
+					    FOREIGN KEY (ownerID)
+					    REFERENCES ECSCHEMA.Owner
+					    ON DELETE CASCADE);
+
+
+CREATE TABLE ECSCHEMA.Location(locationID INT GENERATED ALWAYS AS IDENTITY
+                          	  CONSTRAINT location_pk PRIMARY KEY,
+			       label VARCHAR(32) UNIQUE NOT NULL,
+			       location VARCHAR(64) NOT NULL,
+			       modTime TIMESTAMP NOT NULL
+				     WITH DEFAULT CURRENT_TIMESTAMP,
+			      CONSTRAINT location_ch1
+			         CHECK (NOT (label = '[ ALL ]')));
+
+
+CREATE TRIGGER ECSCHEMA.locationTrigger1 AFTER UPDATE OF location
+	ON ECSCHEMA.Location REFERENCING OLD ROW AS oldrow
+	NEW ROW AS newrow
+	FOR EACH ROW UPDATE ECSCHEMA.Location
+		SET modTime = CURRENT_TIMESTAMP
+		WHERE oldrow.location <> newrow.location
+		  AND oldrow.locationID = newrow.locationID
+		  AND locationID = newrow.locationID;
+
+CREATE TABLE ECSCHEMA.FirstAlarm(userID INT NOT NULL, ownerID INT NOT NULL,
+				 locationID INT NOT NULL,
+                                 eventTime TIME NOT NULL,
+				 weekday BOOLEAN NOT NULL,
+       	     		         alarmTime TIME,
+			         forEmail BOOLEAN NOT NULL DEFAULT TRUE,
+                                 forPhone BOOLEAN NOT NULL DEFAULT TRUE,
+				  modTime TIMESTAMP NOT NULL
+				     WITH DEFAULT CURRENT_TIMESTAMP,
+			         CONSTRAINT firstalarm_pk
+			             PRIMARY KEY(userID, ownerID, locationID,
+						 eventTime, weekday),
+			         CONSTRAINT firstalarm_fk1 FOREIGN KEY(userid)
+			             REFERENCES ECSCHEMA.UserInfo(userID)
+				     ON DELETE CASCADE,
+			         CONSTRAINT firstalarm_fk2 FOREIGN KEY(ownerID)
+			             REFERENCES ECSCHEMA.Owner(ownerID)
+				     ON DELETE CASCADE,
+			         CONSTRAINT firstalarm_fk3
+				     FOREIGN KEY(locationID)
+			             REFERENCES ECSCHEMA.Location(locationID)
+				     ON DELETE CASCADE);
+
+CREATE TRIGGER ECSCHEMA.firstAlarmTrigger1 AFTER UPDATE OF
+	alarmTime, forEmail, forPhone
+	ON ECSCHEMA.FirstAlarm REFERENCING OLD ROW AS oldrow NEW ROW AS newrow
+	FOR EACH ROW UPDATE ECSCHEMA.FirstAlarm
+	    SET modTime = CURRENT_TIMESTAMP
+	    WHERE ((NOT oldrow.locationID = newrow.locationID)
+		   OR (NOT oldrow.userID = newrow.userID)
+		   OR (NOT oldrow.locationID = newrow.locationID)
+		   OR (NOT oldrow.eventTime = newrow.eventTime)
+		   OR (NOT oldrow.weekday = newrow.weekday)
+		   OR (NOT oldrow.forEmail = newrow.forEmail)
+		   OR (NOT oldrow.forPhone = newrow.forPhone))
+              AND (userID = oldrow.userID OR userID = newrow.userID)
+	      AND (locationID = oldrow.locationID
+		   OR locationID = newrow.locationID)
+	      AND (eventTime = oldrow.eventTime OR eventTime = newrow.eventTime)
+	      AND (weekday = oldrow.weekday OR weekday = newrow.weekday);
+
+CREATE TABLE ECSCHEMA.SecondAlarm(userID INT NOT NULL, ownerID INT NOT NULL,
+				  locationID INT NOT NULL,
+       	     		          offset INT NOT NULL DEFAULT 0
+				      CONSTRAINT secondalarm_ck
+				      CHECK (offset > 0),
+			          forEmail BOOLEAN NOT NULL WITH DEFAULT FALSE,
+                                  forPhone BOOLEAN NOT NULL WITH DEFAULT TRUE,
+				  modTime TIMESTAMP NOT NULL
+				      WITH DEFAULT CURRENT_TIMESTAMP,
+			          CONSTRAINT secondalarm_pk
+			              PRIMARY KEY(userID, ownerID, locationID),
+			          CONSTRAINT secondalarm_fk1
+				      FOREIGN KEY(userID)
+			              REFERENCES ECSCHEMA.UserInfo (userID)
+				      ON DELETE CASCADE,
+			          CONSTRAINT secondalarm_fk2
+				      FOREIGN KEY(ownerID)
+			              REFERENCES ECSCHEMA.Owner (ownerID)
+				      ON DELETE CASCADE,
+			          CONSTRAINT secondalarm_fk3
+				      FOREIGN KEY(ownerID)
+			              REFERENCES
+					ECSCHEMA.Location (locationID)
+				      ON DELETE CASCADE);
+
+CREATE TRIGGER ECSCHEMA.secondAlarmTrigger1 AFTER UPDATE OF 
+	userID, ownerID, locationID, offset, forEmail, forPhone
+	ON ECSCHEMA.SecondAlarm REFERENCING OLD ROW AS oldrow
+	NEW ROW As newrow
+	FOR EACH ROW UPDATE ECSCHEMA.SecondAlarm
+		SET modTime = CURRENT_TIMESTAMP
+		WHERE ((NOT oldrow.userID = newrow.userID)
+			OR (NOT oldrow.ownerID = newrow.ownerID)
+			OR (NOT oldrow.locationID = newrow.locationID)
+			OR (NOT oldrow.offset = newrow.offset)
+			OR (NOT oldrow.forEmail = newrow.forEmail)
+			OR (NOT oldrow.forPhone = forPhone))
+		  AND (userID = oldrow.userID OR userID = newrow.userID)
+		  AND (ownerID = oldrow.ownerID OR ownerID = newrow.ownerID)
+		  AND (locationID = oldrow.locationID
+		       OR locationID = newrow.locationID);
+
+CREATE TABLE ECSCHEMA.Event(eventID INT GENERATED ALWAYS AS IDENTITY
+				CONSTRAINT event_pk PRIMARY KEY,
+			    ownerID INT NOT NULL,
+			    label VARCHAR(32) NOT NULL,
+			    description VARCHAR(254),
+			    createTime TIMESTAMP NOT NULL
+				WITH DEFAULT CURRENT_TIMESTAMP,
+			    modTime TIMESTAMP NOT NULL
+				WITH DEFAULT CURRENT_TIMESTAMP,
+			    CONSTRAINT event_fk FOREIGN KEY(ownerID)
+				REFERENCES ECSCHEMA.Owner(ownerID)
+				ON DELETE CASCADE,
+			    CONSTRAINT event_ch1 UNIQUE (ownerID, label),
+			      CONSTRAINT event_ch2
+			         CHECK (NOT (label = '[ ALL ]')));
+
+CREATE TRIGGER ECSCHEMA.eventTrigger1 AFTER UPDATE OF
+	ownerID, description
+	ON ECSCHEMA.Event REFERENCING OLD ROW AS oldrow NEW ROW AS newrow
+	FOR EACH ROW UPDATE ECSCHEMA.Event
+		SET modTime = CURRENT_TIMESTAMP
+		WHERE (oldrow.eventID = newrow.eventID)
+		  AND (NOT oldrow.description = newrow.description)
+		  AND (eventID = newrow.eventID);
+
+CREATE TABLE ECSCHEMA.EventInstance(instanceID INT GENERATED ALWAYS AS IDENTITY
+       	     		         CONSTRAINT instance_pk PRIMARY KEY,
+		             eventID INT NOT NULL,
+			     locationID INT NOT NULL,
+			     preEventType VARCHAR(32),
+			     preEventOffset INT DEFAULT 0
+				 CONSTRAINT instance_ck1
+				 CHECK(preEventOFfset IS NULL
+				       OR  preEventOffset >= 0),
+			     startDate DATE, startTime TIME,
+			     endDate DATE, endTime TIME,
+			     status VARCHAR(9) CONSTRAINT instance_ck2
+			        CHECK ((status = 'TENTATIVE')
+                                       OR (status = 'CONFIRMED')
+                                       OR (status = 'CANCELLED')),
+			     createTime TIMESTAMP NOT NULL
+				  DEFAULT CURRENT_TIMESTAMP,
+			     modTime TIMESTAMP NOT NULL
+				  DEFAULT CURRENT_TIMESTAMP,
+			     CONSTRAINT instance_ck3 CHECK
+				((preEventType IS NULL AND
+				  (preEventOffset IS NULL OR
+				   preEventOffset = 0))
+				 OR (preEventType IS NOT NULL AND
+				     preEventOffset > 0)),
+			     CONSTRAINT instance_fk1 FOREIGN KEY (eventID)
+			        REFERENCES ECSCHEMA.Event(eventID)
+				ON DELETE CASCADE,
+			     CONSTRAINT instance_fk2 FOREIGN KEY (locationID)
+				REFERENCES ECSCHEMA.Location(locationID)
+				ON DELETE RESTRICT
+			     );
+
+CREATE TRIGGER ECSCHEMA.instanceTrigger1 AFTER UPDATE OF
+	eventID, locationID, preEventType, preEventOffset, startDate, startTime,
+	endDate, endTime, status
+	ON ECSCHEMA.EventInstance REFERENCING OLD ROW AS oldrow
+	NEW ROW AS newrow
+	FOR EACH ROW UPDATE ECSCHEMA.EventInstance
+		SET modTime = CURRENT_TIMESTAMP
+		WHERE oldrow.instanceID = newrow.instanceID
+		      AND instanceID = newrow.instanceID
+		      AND (oldrow.eventID <> newrow.eventID
+			   OR oldrow.locationID <> newrow.locationID
+			   OR NOT (oldrow.preEventTYpe = newrow.preEventType)
+			   OR oldrow.preEventOffset <> newrow.preEventOffset
+			   OR (NOT oldrow.startDate = newrow.startDate)
+			   OR (NOT oldrow.startTime = newrow.startTime)
+			   OR (NOT oldrow.endDate = newrow.endDate)
+			   OR (NOT oldrow.endTime = newrow.endTime)
+			   OR (NOT oldrow.status = newrow.status));
+
+CREATE TABLE ECSCHEMA.Series(seriesID INT GENERATED ALWAYS AS IDENTITY
+       	     		         CONSTRAINT series_pk PRIMARY KEY,
+			     ownerID INT NOT NULL,
+			     label VARCHAR(32) NOT NULL,
+			     CONSTRAINT series_fk1 FOREIGN KEY (ownerID)
+				REFERENCES ECSCHEMA.Owner ON DELETE CASCADE,
+			     CONSTRAINT series_ch1 UNIQUE (ownerID, label),
+			      CONSTRAINT series_ch2
+			         CHECK (NOT (label = '[ ALL ]')));
+
+CREATE TABLE ECSCHEMA.SeriesEventInstances(seriesID INT NOT NULL,
+					   instanceID INT NOT NULL,
+					   CONSTRAINT seriesei_pk PRIMARY KEY
+					       (seriesID, instanceID),
+					   CONSTRAINT seriesei_fk1
+					   FOREIGN KEY (seriesID)
+					       REFERENCES ECSCHEMA.Series
+					       ON DELETE CASCADE,
+					   CONSTRAINT seriesei_fk2
+					   FOREIGN KEY (instanceID)
+					       REFERENCES ECSCHEMA.EventInstance
+					       ON DELETE CASCADE);
+
+CREATE TABLE ECSCHEMA.Attendee (userID INT NOT NULL,
+				instanceID INT NOT NULL,
+			        attendeeState VARCHAR(10) NOT NULL
+				   DEFAULT 'ACTIVE'
+			           CONSTRAINT attending_ck3
+                                   CHECK((attendeeState = 'ACTIVE')
+                                         OR (attendeeState = 'CANCELLING')
+                                         OR (attendeeState = 'CANCELLED')),
+				attendingPreEvent BOOLEAN DEFAULT NULL,
+				seriesID INT DEFAULT NULL,
+				emailSeqno INT NOT NULL DEFAULT 0
+				    CONSTRAINT attending_ch1
+				    CHECK (emailSeqno >= 0),
+				phoneSeqno INT NOT NULL DEFAULT 0
+				    CONSTRAINT attending_ch2
+				    CHECK (phoneSeqno >= 0),
+				createTime TIMESTAMP NOT NULL
+				    DEFAULT CURRENT_TIMESTAMP,
+				modTime TIMESTAMP
+				    DEFAULT CURRENT_TIMESTAMP,
+				lastEmailTime TIMESTAMP DEFAULT NULL,
+				lastPhoneTime TIMESTAMP DEFAULT NULL,
+       	     			CONSTRAINT attending_pk
+			          PRIMARY KEY (userID, instanceID),
+				CONSTRAINT attending_fk1 FOREIGN KEY (userID)
+			          REFERENCES ECSCHEMA.UserInfo(userID)
+			          ON DELETE CASCADE,
+				CONSTRAINT attending_fk2 FOREIGN KEY(instanceID)
+			          REFERENCES ECSCHEMA.EventInstance(instanceID)
+			          ON DELETE RESTRICT,
+				CONSTRAINT attending_fk3
+				  FOREIGN KEY (seriesID)
+				  REFERENCES ECSCHEMA.Series(seriesID)
+				  ON DELETE RESTRICT);
+
+CREATE TRIGGER ECSCHEMA.attendeeTrigger1 AFTER INSERT
+       ON ECSCHEMA.Attendee Referencing NEW AS atbl
+       FOR EACH ROW UPDATE ECSCHEMA.Attendee
+           SET modTime = CURRENT_TIMESTAMP,
+	       emailSeqno = 0,
+	       phoneSeqno = 0
+	   WHERE userID = atbl.userID AND instanceID = atbl.instanceID;
+
+
+CREATE TRIGGER ECSCHEMA.attendeeTrigger2 AFTER INSERT
+       ON ECSCHEMA.Attendee Referencing NEW AS atbl
+       FOR EACH ROW UPDATE ECSCHEMA.Attendee
+       	   SET attendingPreEvent = (SELECT useDefault
+		 FROM ECSCHEMA.PreEventDefault
+		 WHERE userID = atbl.userID
+			AND ownerID = (SELECT ownerID FROM ECSCHEMA.EVENT
+		 		WHERE eventID = (SELECT eventID
+				    FROM ECSCHEMA.EventInstance
+				    WHERE instanceID = atbl.instanceID)))
+	   WHERE atbl.attendingPreEvent IS NULL
+             AND attendingPreEvent IS NULL
+	     AND userID = atbl.userID
+	     AND instanceID = atbl.instanceID;
+
+CREATE TRIGGER ECSCHEMA.attendeeTrigger3 AFTER UPDATE OF
+	attendeeState, attendingPreEvent
+	ON ECSCHEMA.Attendee REFERENCING OLD ROW AS atbl
+	FOR EACH ROW UPDATE ECSCHEMA.Attendee
+		SET modTime = CURRENT_TIMESTAMP
+		WHERE atbl.userID = userID AND atbl.instanceID = instanceID;
+
+CREATE TRIGGER ECSCHEMA.attendeeTrigger4 AFTER UPDATE OF emailSeqno
+	ON ECSCHEMA.Attendee REFERENCING OLD ROW AS atbl
+	FOR EACH ROW UPDATE ECSCHEMA.Attendee
+		SET lastEmailTime = CURRENT_TIMESTAMP
+		WHERE atbl.userID = userID AND atbl.instanceID = instanceID;
+
+CREATE TRIGGER ECSCHEMA.attendeeTrigger5 AFTER UPDATE OF phoneSeqno
+	ON ECSCHEMA.Attendee REFERENCING OLD ROW AS atbl
+	FOR EACH ROW UPDATE ECSCHEMA.Attendee
+		SET lastPhoneTime = CURRENT_TIMESTAMP
+		WHERE atbl.userID = userID AND atbl.instanceID = instanceID;
+
+
+CREATE TABLE ECSCHEMA.SeriesInstance(seriesID INT NOT NULL,    
+				     instanceID INT NOT NULL,
+				     CONSTRAINT seriesinst_pk
+					PRIMARY KEY(seriesID, instanceID),
+				     CONSTRAINT seriesinst_fk1
+					FOREIGN KEY (seriesID)
+					REFERENCES ECSCHEMA.Series
+					ON DELETE CASCADE,
+				     CONSTRAINT seriesinst_fk2
+					FOREIGN KEY (instanceID)
+					REFERENCES ECSCHEMA.EventInstance
+					ON DELETE CASCADE);
+
+CREATE TRIGGER ECSCHEMA.SeriesInstTrigger1 AFTER DELETE
+    ON ECSCHEMA.SeriesInstance REFERENCING OLD AS si
+    FOR EACH ROW DELETE FROM ECSCHEMA.Attendee WHERE si.seriesID = seriesID;
+
+CREATE TRIGGER ECSCHEMA.SeriesInstanceTrigger2 AFTER UPDATE OF
+    instanceID ON ECSCHEMA.SeriesInstance
+    REFERENCING OLD AS oldrow NEW AS newrow
+    FOR EACH ROW UPDATE ECSCHEMA.Attendee
+	SET instanceID = newrow.instanceID
+	WHERE instanceID = oldrow.instanceID AND seriesID = oldrow.seriesID
+	  AND oldrow.seriesID = newrow.seriesID;
+
+CREATE TRIGGER ECSCHEMA.SeriesInstanceTrigger3 AFTER UPDATE OF
+    seriesID ON ECSCHEMA.SeriesInstance
+    REFERENCING OLD AS oldrow NEW AS newrow
+    FOR EACH ROW UPDATE ECSCHEMA.Attendee
+	SET seriesID = NULL
+	WHERE instanceID = oldrow.instanceID AND seriesID = oldrow.seriesID;
+]]>
+  </entry>
+
+  <entry key="grants"><![CDATA[
+
+GRANT SELECT ON ECSCHEMA.CountryPrefix TO PUBLIC;
+GRANT SELECT ON ECSCHEMA.Carrier TO PUBLIC;
+GRANT SELECT ON ECSCHEMA.CarrierMap TO PUBLIC;
+GRANT SELECT ON ECSCHEMA.CellPhoneEmail TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.UserInfo TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.Owner TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.PreEventDefault TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.Location TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.FirstAlarm TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.SecondAlarm TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.Event TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.EventInstance TO ECOWNER, ECUSER;
+GRANT SELECT ON ECSCHEMA.Attendee TO ECOWNER, ECUSER;
+GRANT SELECT on ECSCHEMA.Series to ECOWNER, ECUSER;
+GRANT SELECT on ECSCHEMA.SeriesInstance to ECOWNER, ECUSER;
+
+GRANT INSERT ON ECSCHEMA.CountryPrefix TO ECADMIN;
+GRANT INSERT ON ECSCHEMA.Carrier TO ECADMIN;
+GRANT INSERT ON ECSCHEMA.CarrierMap TO ECADMIN;
+GRANT INSERT ON ECSCHEMA.CellPhoneEmail TO ECOWNER;
+GRANT INSERT ON ECSCHEMA.UserInfo TO ECUSER;
+GRANT INSERT ON ECSCHEMA.Owner TO ECOWNER;
+GRANT INSERT ON ECSCHEMA.PreEventDefault TO ECUSER;
+GRANT INSERT ON ECSCHEMA.Location TO ECOWNER;
+GRANT INSERT ON ECSCHEMA.FirstAlarm TO ECUSER;
+GRANT INSERT ON ECSCHEMA.SecondAlarm TO ECUSER;
+GRANT INSERT ON ECSCHEMA.Event TO ECOWNER;
+GRANT INSERT ON ECSCHEMA.EventInstance TO ECOWNER;
+GRANT INSERT ON ECSCHEMA.Attendee TO ECUSER;
+GRANT INSERT on ECSCHEMA.Series to ECOWNER;
+GRANT INSERT on ECSCHEMA.SeriesInstance to ECOWNER;
+
+GRANT UPDATE ON ECSCHEMA.CountryPrefix TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.Carrier TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.CarrierMap TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.CellPhoneEmail TO ECOWNER;
+GRANT UPDATE ON ECSCHEMA.UserInfo TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.Owner TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.PreEventDefault TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.Location TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.FirstAlarm TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.SecondAlarm TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.Event TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.EventInstance TO ECADMIN;
+GRANT UPDATE ON ECSCHEMA.Attendee TO ECADMIN;
+GRANT UPDATE on ECSCHEMA.Series to ECOWNER;
+GRANT UPDATE on ECSCHEMA.SeriesInstance to ECOWNER;
+
+GRANT DELETE ON ECSCHEMA.CountryPrefix TO ECADMIN;
+GRANT DELETE ON ECSCHEMA.Carrier TO ECADMIN;
+GRANT DELETE ON ECSCHEMA.CarrierMap TO ECADMIN;
+GRANT DELETE ON ECSCHEMA.CellPhoneEmail TO ECOWNER;
+GRANT DELETE ON ECSCHEMA.UserInfo TO ECUSER;
+GRANT DELETE ON ECSCHEMA.Owner TO ECOWNER;
+GRANT DELETE ON ECSCHEMA.PreEventDefault TO ECUSER;
+GRANT DELETE ON ECSCHEMA.Location TO ECOWNER;
+GRANT DELETE ON ECSCHEMA.FirstAlarm TO ECUSER;
+GRANT DELETE ON ECSCHEMA.SecondAlarm TO ECUSER;
+GRANT DELETE ON ECSCHEMA.Event TO ECOWNER;
+GRANT DELETE ON ECSCHEMA.EventInstance TO ECOWNER;
+GRANT DELETE ON ECSCHEMA.Attendee TO ECUSER;
+
+GRANT UPDATE (userID, firstName, lastName, emailAddr, countryPrefix,
+	      cellNumber, carrierID, status)
+	ON ECSCHEMA.UserInfo TO ECUSER;
+GRANT UPDATE (label, summary)
+	ON ECSCHEMA.Owner TO ECOWNER;
+GRANT UPDATE (userID, ownerID, val)
+	ON ECSCHEMA.PreEventDefault TO ECUSER;
+GRANT UPDATE (label, location)
+	ON ECSCHEMA.Location TO ECOWNER;
+GRANT UPDATE (locationID, eventTime, weekday, alarmTime, forEmail, forPhone)
+	ON ECSCHEMA.FirstAlarm TO ECUSER;
+GRANT UPDATE (offset, forEmail, forPhone)
+	ON ECSCHEMA.SecondAlarm TO ECUSER;
+GRANT UPDATE (label, description)
+	ON ECSCHEMA.Event TO ECOWNER;
+GRANT UPDATE (locationID, preEventType, preEventOffset, startDate, startTime,
+	      endDate, endTime, status)
+	ON ECSCHEMA.EventInstance TO ECOWNER;
+GRANT UPDATE (attendeeState, attendingPreEvent)
+	ON ECSCHEMA.Attendee TO ECUSER;
+]]>
+  </entry>
+
+  <entry key = "addCountryPrefixes"><![CDATA[
+INSERT INTO ECSCHEMA.CountryPrefix VALUES
+	('0', 'OTHER'),
+	('1', 'US/CA'),
+	('1242', 'BS'),	('1246', 'BB'),	('1264', 'AI'),	('1268', 'AG'),
+		('1284', 'VG'),	('1340', 'VI'),
+	('1345', 'KY'),
+	('1441', 'BM'),	('1473', 'GD'),
+	('1649', 'TC'),	('1658', 'JM'),	('1664', 'MS'),	('1670', 'MP'),
+		('1671', 'GU'),	('1684', 'AS'),
+	('1721', 'SX'),	('1758', 'LC'),	('1767', 'DM'),	('1784', 'VC'),
+		('1787', 'PR'),
+	('1809', 'DO'),	('1829', 'DO'),	('1849', 'DO'),	('1868', 'TT'),
+		('1869', 'KN'),	('1876', 'JM'),
+	('1939', 'PR');
+]]>
+  </entry>
+
+  <entry key="initialCarriers"><![CDATA[
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('OTHER');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('ATT');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('T-MOBILE');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('VERIZON');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('SPRINT');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('XFINITY MOBILE');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('VIRGIN MOBILE');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('TRACFONE');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('METRO PCS');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('BOOST MOBILE');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('CRICKET');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('GOOGLE FI');
+INSERT INTO ECSCHEMA.Carrier (carrier) VALUES ('U.S. CELLULAR');
+]]>
+  </entry>
+
+  <entry key="initialCarrierMap"><![CDATA[
+INSERT INTO ECSCHEMA.CarrierMap  (countryPrefix, carrierID, idomain)
+	 VALUES ('1', (SELECT CarrierID FROM ECSCHEMA.CARRIER
+		 WHERE carrier = 'ATT'), 'mms.att.net'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'T-MOBILE'), 'tmomail.net'),
+	        ('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'VERIZON'), 'vzwpix.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'SPRINT'), 'pm.sprint.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'XFINITY MOBILE'), 'mypixmessages.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'VIRGIN MOBILE'), 'vmpix.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'TRACFONE'), 'mmst5.tracfone.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'METRO PCS'), 'mymetropcs.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'BOOST MOBILE'), 'myboostmobile.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'CRICKET'), 'mss.cricketwireless.net'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier = 'GOOGLE FI'), 'msg.fi.google.com'),
+		('1', (SELECT CarrierID FROM ECSCHEMA.Carrier
+		 WHERE carrier =  'U.S. CELLULAR'), 'mms.uscc.net');
+]]>
+  </entry>
+
+  <entry key="theSchema">ECSCHEMA</entry>
+
+  <entry key="setselectFormat"><![CDATA[
+  SET %1$s = (SELECT %1$s FROM ECSCHEMA.%2s WHERE %1$s = ?)
+]]>
+  </entry>
+  <entry key="listCarriers"><![CDATA[
+SELECT * FROM ECSCHEMA.Carrier
+]]>
+  </entry>
+
+  <entry key="listCarrier"><![CDATA[
+SELECT * FROM ECSCHEMA.Carrier WHERE carrierID = ?
+]]>
+  </entry>
+
+
+  <entry key="listCarriersMatching"><![CDATA[
+SELECT * FROM ECSCHEMA.Carrier WHERE TRIM(carrier) LIKE UPPER(?)
+]]>
+  </entry>
+
+  <entry key="addCarrier"><![CDATA[
+INSERT INTO ECSCHEMA.Carrier(carrier) VALUES (UPPER(?))
+]]>
+  </entry>
+
+  <entry  key="findCarrier"><![CDATA[
+SELECT carrierID FROM ECSCHEMA.Carrier WHERE carrier = UPPER(?)
+]]>
+  </entry>
+
+  <entry key="deleteCarrierByID"><![CDATA[
+DELETE FROM ECSCHEMA.Carrier WHERE carrierID = ?
+  ]]>
+  </entry>
+
+  <entry key="deleteCarrierMatching"><![CDATA[
+DELETE FROM ECSCHEMA.Carrier WHERE TRIM(carrier) LIKE UPPER(?)
+  ]]>
+  </entry>
+
+  <entry key="updateCarrier"><![CDATA[
+  UPDATE ECSCHEMA.Carrier SET carrier = ? WHERE carrierID = ?
+]]>
+  </entry>
+  
+  <entry key="addToCarrierMap"><![CDATA[
+INSERT INTO ECSCHEMA.CarrierMap(idomain, countryPrefix, carrierID)
+    VALUES (?,?,?)
+  ]]>
+  </entry>
+
+  <entry key="updateCarrierDomain"><![CDATA[
+UPDATE ECSCHEMA.CarrierMap SET idomain = ?
+    WHERE countryPrefix = ? AND carrierID = ?
+]]>
+  </entry>
+
+  <entry key="deleteFromCarrierMap"><![CDATA[
+DELETE FROM ECSCHEMA.CarrierMap WHERE countryPrefix = ? AND carrierID = ?
+]]>
+  </entry>
+
+  <entry key="sortedCarrierMap"><![CDATA[
+SELECT countryPrefix, tbla.carrierID, carrier, idomain
+    FROM ECSCHEMA.Carrier AS tbla, ECSCHEMA.CarrierMap as tblb
+    WHERE tbla.carrierID = tblb.carrierID ORDER BY countryPrefix, carrier
+]]>
+  </entry>
+
+  <entry key="findCarrierMap"><![CDATA[
+SELECT countryPrefix, tbla.carrierID, carrier, idomain
+    FROM ECSCHEMA.Carrier AS tbla, ECSCHEMA.CarrierMap as tblb
+    WHERE tbla.carrierID = tblb.carrierID
+          AND TRIM(tblb.countryPrefix) LIKE ?
+	  AND TRIM(tbla.carrier) LIKE UPPER(?)
+    ORDER BY countryPrefix, carrier
+]]>
+  </entry>
+
+  <entry key="findCarrierMapByID"><![CDATA[
+ SELECT countryPrefix, tabla.carridID, carrier, idomain
+    FROM ECSCHEMA.Carrier AS tbla, ECSCHEMA.CarrierMap as tblb
+    WHERE tbla.carrierID = tblb.carrierID
+          AND TRIM(tblb.countryPrefix) LIKE ? AND tbla.carrierID = ?
+    ORDER BY countryPrefix, carrier
+]]>
+  </entry>
+
+
+  <entry key="getCarrierMapDomain"><![CDATA[
+SELECT idomain FROM ECSCHEMA.CarrierMap
+    WHERE  countryPrefix = ? AND carrierID = ?
+]]>
+  </entry>
+
+  <entry key="addCellPhoneEmail"><![CDATA[
+INSERT INTO ECSCHEMA.CellPhoneEmail
+    (countryPrefix,cellNumber,emailAddr, setByCarrier)
+    VALUES (?,?,?,?)
+]]>
+  </entry>
+
+  <entry key="updateCellPhoneEmail"><![CDATA[
+UPDATE ECSCHEMA.CellPhoneEmail SET emailAddr = ?, setByCarrier = ?
+    WHERE countryPrefix = ? AND cellNumber = ?
+]]>
+  </entry>
+
+  <entry key="deleteCellPhoneEmail"><![CDATA[
+DELETE FROM ECSCHEMA.CellPhoneEmail WHERE countryPrefix = ? AND cellNumber = ?
+]]>
+  </entry>
+
+
+  <entry key="getCellPhoneEmail"><![CDATA[
+SELECT emailAddr, setByCarrier, modTime FROM ECSCHEMA.CellPhoneEmail
+     WHERE countryPrefix = ? AND cellNumber = ?
+]]>
+  </entry>
+
+  <entry key="insertUserInfo"><![CDATA[
+INSERT INTO ECSCHEMA.UserInfo(firstName, lastName, lastNameFirst, title,
+	emailAddr, countryPrefix, cellNumber, carrierID)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteUserInfoByID"><![CDATA[
+DELETE FROM ECSCHEMA.UserInfo WHERE userID = ?
+]]>
+  </entry>
+
+  <entry key="setUserData"><![CDATA[
+UPDATE ECSCHEMA.UserInfo %s WHERE userID = ?
+]]>
+  </entry>
+
+  <entry key="getUserInfoData"><![CDATA[
+SELECT * FROM ECSCHEMA.UserInfo Where userID = ?
+]]>
+  </entry>
+
+  <entry key="getUserInfoDataForKeymap"><![CDATA[
+SELECT firstName, lastName, lastNameFirst, title  FROM ECSCHEMA.UserInfo Where userID = ?
+]]>
+  </entry>
+  
+
+
+  <entry key="findUserInfo"><![CDATA[
+SELECT userID FROM ECSCHEMA.UserInfo
+    WHERE TRIM(UPPER(firstName)) LIKE UPPER(?)
+       OR TRIM(UPPER(lastName)) LIKE UPPER(?)
+       OR TRIM(UPPER(emailAddr)) LIKE UPPER(?)
+       OR TRIM(UPPER(cellNumber)) LIKE UPPER(?)
+]]>
+  </entry>
+
+  <entry key="listUserInfo"><![CDATA[
+SELECT userID, firstName, lastName, lastNameFirst, title, emailAddr,
+        countryPrefix, cellNumber, carrier, status
+    FROM ECSCHEMA.UserInfo AS tbla,  ECSCHEMA.Carrier AS tblb
+    WHERE tbla.carrierID = tblb.carrierID
+          AND NOT (tbla.status = 'CANCELLED')
+]]>
+  </entry>
+
+  <entry key="listUserInfoForID"><![CDATA[
+SELECT userID, firstName, lastName, lastNameFirst, title, emailAddr,
+        countryPrefix, cellNumber, carrier, status
+    FROM ECSCHEMA.UserInfo AS tbla,  ECSCHEMA.Carrier AS tblb
+    WHERE tbla.carrierID = tblb.carrierID
+          AND NOT (tbla.status = 'CANCELLED')
+	  AND userID = ?
+]]>
+  </entry>
+
+
+  <entry key="listUserInfoMatching"><![CDATA[
+SELECT userID, firstName, lastName, lastNameFirst, title, emailAddr,
+       countryPrefix, cellNumber, carrier, status
+    FROM ECSCHEMA.UserInfo AS tbla, ECSCHEMA.Carrier AS tblb
+    WHERE tbla.carrierID = tblb.carrierID
+      AND (TRIM(UPPER(tbla.firstName)) LIKE UPPER(?)
+	   OR TRIM(UPPER(tbla.lastName)) LIKE UPPER(?)
+	   OR TRIM(UPPER(tbla.emailAddr)) LIKE UPPER(?))
+          AND NOT (tbla.status = 'CANCELLED')
+]]>
+  </entry>
+
+  <entry key="listUserInfoMatchingCell"><![CDATA[
+SELECT userID, firstName, lastName, lastNameFirst, title, emailAddr,
+       countryPrefix, cellNumber, carrier, status
+    FROM ECSCHEMA.UserInfo AS tbla, ECSCHEMA.Carrier AS tblb
+    WHERE tbla.carrierID = tblb.carrierID AND tbla.cellNumber like UPPER(?)
+      AND NOT (tbla.status = 'CANCELLED')
+]]>
+  </entry>
+
+    <entry key="listUserInfoMatchingIntlCell"><![CDATA[
+SELECT userID, firstName, lastName, lastNameFirst, emailAddr, countryPrefix,
+       cellNumber, carrier, status
+    FROM ECSCHEMA.UserInfo AS tbla, ECSCHEMA.Carrier AS tblb
+    WHERE tbla.carrierID = tblb.carrierID
+      AND TRIM(tbla.countryPrefix || tbla.cellNumber) LIKE UPPER(?))
+      AND NOT (tbla.status = 'CANCELLED')
+
+]]>
+  </entry>
+
+  <entry key="findUserInfoMatching"><![CDATA[
+SELECT userID FROM ECSCHEMA.UserInfo
+    WHERE (TRIM(UPPER(firstName)) LIKE UPPER(?)
+	   OR TRIM(UPPER(lastName)) LIKE UPPER(?)
+       	   OR TRIM(UPPER(emailAddr)) LIKE UPPER(?))
+      AND NOT (status = 'CANCELLED')
+
+]]>
+  </entry>
+
+  <entry key="findUserInfoMatchingCell"><![CDATA[
+SELECT userID FROM ECSCHEMA.UserInfo
+    WHERE cellNumber like UPPER(?)
+      AND NOT (status = 'CANCELLED')
+]]>
+  </entry>
+
+  <entry key="findUserInfoMatchingIntlCell"><![CDATA[
+SELECT userID FROM ECSCHEMA.UserInfo AS tbla
+    WHERE TRIM(countryPrefix || cellNumber) LIKE UPPER(?)
+      AND NOT (status = 'CANCELLED')
+]]>
+  </entry>
+
+  <entry key="insertOwner"><![CDATA[
+INSERT INTO ECSCHEMA.Owner(label, summary, idomain) VALUES (?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteOwnerByID"><![CDATA[
+DELETE FROM ECSCHEMA.Owner where ownerID = ?
+]]>
+  </entry>
+
+  <entry key="listOwners"><![CDATA[
+SELECT * from ECSCHEMA.Owner
+]]>
+  </entry>
+
+  <entry key="listOwnersMatching"><![CDATA[
+SELECT * FROM ECSCHEMA.Owner WHERE UPPER(label) like UPPER(?)
+]]>
+  </entry>
+
+  <entry key="listOwnersByID"><![CDATA[
+SELECT * FROM ECSCHEMA.Owner WHERE ownerID = ?
+]]>
+  </entry>
+
+
+  <entry key="setOwnerData"><![CDATA[
+UPDATE ECSCHEMA.Owner %s WHERE ownerID = ?
+]]>
+  </entry>
+
+  <entry key="getOwnerData"><![CDATA[
+SELECT %s FROM ECSCHEMA.Owner Where ownerID = ?
+]]>
+  </entry>
+
+  <entry key="findOwnerMatching"><![CDATA[
+SELECT ownerID FROM ECSCHEMA.Owner WHERE TRIM(UPPER(label)) LIKE UPPER(?)
+]]>
+  </entry>
+
+  <entry key="insertLocation"><![CDATA[
+INSERT INTO ECSCHEMA.Location(label, location) VALUES (?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteLocationByID"><![CDATA[
+DELETE FROM ECSCHEMA.Location where locationID = ?
+]]>
+  </entry>
+
+  <entry key="listLocations"><![CDATA[
+SELECT * from ECSCHEMA.Location
+]]>
+  </entry>
+
+  <entry key="listLocationsMatching"><![CDATA[
+SELECT * FROM ECSCHEMA.Location WHERE UPPER(label) like UPPER(?)
+]]>
+  </entry>
+
+  <entry key="listLocationsByID"><![CDATA[
+SELECT * FROM ECSCHEMA.Location WHERE locationID = ?
+]]>
+  </entry>
+
+
+  <entry key="setLocationData"><![CDATA[
+UPDATE ECSCHEMA.Location %s WHERE locationID = ?
+]]>
+  </entry>
+
+  <entry key="getLocationData"><![CDATA[
+SELECT %s FROM ECSCHEMA.Location Where locationID = ?
+]]>
+  </entry>
+
+  <entry key="findLocationMatching"><![CDATA[
+SELECT locationID FROM ECSCHEMA.Location WHERE TRIM(UPPER(label)) LIKE UPPER(?)
+]]>
+  </entry>
+
+
+
+
+  <entry key="insertFirstAlarm"><![CDATA[
+INSERT INTO ECSCHEMA.FirstAlarm
+	(userID, ownerID, locationID, eventTime, weekday,
+	  alarmTime, forEmail, forPhone)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteFirstAlarm"><![CDATA[
+DELETE FROM ECSCHEMA.FirstAlarm
+	WHERE userID = ? AND ownerID = ? AND locationID = ?
+		AND eventTime = ? AND weekday = ?
+]]>
+  </entry>
+
+  <entry key="listFirstAlarms"><![CDATA[
+SELECT * FROM ECSCHEMA.FirstAlarm WHERE userID = ?%s
+]]>
+  </entry>
+
+  <entry key="setFirstAlarmData"><![CDATA[
+UPDATE ECSCHEMA.FirstAlarm SET %s
+       WHERE userID = ? AND ownerID = ? AND locationID = ?
+	     AND eventTime = ? AND weekday = ?
+]]>
+  </entry>
+
+  <entry key="insertSecondAlarm"><![CDATA[
+INSERT INTO ECSCHEMA.SecondAlarm
+	(userID, ownerID, locationID, offset, forEmail, forPhone)
+	VALUES (?, ?, ?, ?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="listSecondAlarms"><![CDATA[
+SELECT userID, ownerID, locationID, offset, forEmail, forPhone
+    FROM ECSCHEMA.SecondAlarm WHERE  userID = ?%s
+]]>
+  </entry>
+
+  <entry key="deleteSecondAlarm"><![CDATA[
+DELETE FROM ECSCHEMA.SecondAlarm
+	WHERE userID = ? AND ownerID = ? AND locationID = ?
+]]>
+  </entry>
+
+  <entry key="deleteSecondAlarms"><![CDATA[
+DELETE FROM ECSCHEMA.SecondAlarm
+	WHERE userID = ?%s
+]]>
+  </entry>
+
+  <entry key="setSecondAlarm"><![CDATA[
+UPDATE  ECSCHEMA.SecondAlarm SET %s
+	WHERE userID = ? AND ownerID = ? AND locationID = ?
+]]>
+  </entry>
+
+  <entry key="insertPreEventDefault"><![CDATA[
+INSERT INTO ECSCHEMA.PreEventDefault
+	(userID, ownerID, useDefault)
+	VALUES (?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="listPreEventDefaults"><![CDATA[
+SELECT userID, ownerID, useDefault
+    FROM ECSCHEMA.PreEventDefault WHERE  userID = ?%s
+]]>
+  </entry>
+
+  <entry key="getPreEventDefault"><![CDATA[
+SELECT useDefault FROM ECSCHEMA.PreEventDefault
+    WHERE userID = ? AND ownerID = ?
+]]>
+  </entry>
+
+  <entry key="deletePreEventDefault"><![CDATA[
+DELETE FROM ECSCHEMA.PreEventDefault
+	WHERE userID = ? AND ownerID = ?
+]]>
+  </entry>
+
+  <entry key="deletePreEventDefaults"><![CDATA[
+DELETE FROM ECSCHEMA.PreEventDefault
+	WHERE userID = ?%s
+]]>
+  </entry>
+
+  <entry key="setPreEventDefault"><![CDATA[
+UPDATE  ECSCHEMA.PreEventDefault SET useDefault = ?
+	WHERE userID = ? AND ownerID = ?
+]]>
+  </entry>
+
+
+  <entry key="insertEvent"><![CDATA[
+INSERT INTO ECSCHEMA.Event(ownerID, label, description) VALUES (?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteEventByID"><![CDATA[
+DELETE FROM ECSCHEMA.Event where eventID = ?
+]]>
+  </entry>
+
+  <entry key="listEvents"><![CDATA[
+SELECT * from ECSCHEMA.Event
+]]>
+  </entry>
+
+  <entry key="listEventsForOwner"><![CDATA[
+SELECT * from ECSCHEMA.Event WHERE ownerID = ?
+]]>
+  </entry>
+
+  <entry key="listEventsMatching"><![CDATA[
+SELECT * FROM ECSCHEMA.Event WHERE UPPER(label) like UPPER(?)
+]]>
+  </entry>
+
+  <entry key="listEventsByID"><![CDATA[
+SELECT * FROM ECSCHEMA.Event WHERE eventID = ?
+]]>
+  </entry>
+
+
+  <entry key="setEventData"><![CDATA[
+UPDATE ECSCHEMA.Event SET %s WHERE eventID = ?
+]]>
+  </entry>
+
+  <entry key="getEventData"><![CDATA[
+SELECT %s FROM ECSCHEMA.Event Where eventID = ?
+]]>
+  </entry>
+
+  <entry key="findEventMatching"><![CDATA[
+SELECT eventID FROM ECSCHEMA.Event WHERE %s
+]]>
+  </entry>
+
+
+  <entry key="insertEventInstance"><![CDATA[
+INSERT INTO ECSCHEMA.EventInstance(eventID, locationID, preEventType,
+	preEventOffset, startDate, startTime, endDate, endTime, status)
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteEventInstanceByID"><![CDATA[
+DELETE FROM ECSCHEMA.EventInstance WHERE instanceID = ? AND status = 'CANCELLED'
+]]>
+  </entry>
+
+  <entry key="deleteCanceledEventInstances"><![CDATA[
+DELETE FROM ECSCHEMA.EventInstance WHERE status = 'CANCELLED'
+]]>
+  </entry>
+
+  <entry key="setEventInstanceData"><![CDATA[
+UPDATE ECSCHEMA.EventInstance SET %s WHERE instanceID = ?
+]]>
+  </entry>
+
+  <entry key="listEventInstance"><![CDATA[
+SELECT * FROM ECSCHEMA.EventInstance WHERE instanceID = ?
+]]>
+  </entry>
+
+  <entry key="listEventInstances"><![CDATA[
+SELECT * FROM ECSCHEMA.EventInstance
+]]>
+  </entry>
+
+  <entry key="listEventInstancesMatching"><![CDATA[
+SELECT tbli.* FROM ECSCHEMA.EventInstance as tbli, ECSCHEMA.Event as tble
+    WHERE tbli.eventID = tble.eventID%s
+]]>
+  </entry>
+
+  <entry key="findEventInstancesMatching"><![CDATA[
+SELECT instanceID FROM ECSCHEMA.EventInstance WHERE %s
+]]>
+  </entry>
+
+  <entry key="insertSeries"><![CDATA[
+INSERT INTO ECSCHEMA.Series (ownerID, label) VALUES (?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteSeriesByID"><![CDATA[
+DELETE FROM ECSCHEMA.Series WHERE seriesID = ?
+]]>
+  </entry>
+
+  <entry key="listSeries"><![CDATA[
+SELECT * from ECSCHEMA.Series %s 
+]]>
+  </entry>
+
+  <entry key="listSeriesByID"><![CDATA[
+SELECT * from ECSCHEMA.Series WHERE seriesID = ?
+]]>
+  </entry>
+
+  <entry key="findSeries"><![CDATA[
+SELECT seriesID from ECSCHEMA.Series %s 
+]]>
+  </entry>
+
+  <entry key="setSeries"><![CDATA[
+UPDATE ECSCHEMA.Series SET %s WHERE seriesID = ?
+]]>
+  </entry>
+
+  <entry key="insertSeriesInstance"><![CDATA[
+INSERT INTO ECSCHEMA.SeriesInstance (seriesID, instanceID) VALUES (?, ?)
+]]>
+  </entry>
+  
+  <entry key="deleteSeriesInstance"><![CDATA[
+DELETE FROM ECSCHEMA.SeriesInstance WHERE %s
+]]>
+  </entry>
+
+  <entry key="listSeriesInstance"><![CDATA[
+SELECT * from ECSCHEMA.SeriesInstance %s
+]]>
+  </entry>
+
+  <entry key="listSeriesInstanceByOwner"><![CDATA[
+SELECT stbl.seriesID, stbl.instanceID
+ from ECSCHEMA.SeriesInstance AS stbl, ECSCHEMA.EventInstance AS itbl,
+	ECSCHEMA.Event as etbl
+    WHERE stbl.instanceID = itbl.instanceID
+      AND itbl.eventID = etbl.eventID %s
+]]>
+  </entry>
+
+  <entry key="insertAttendee"><![CDATA[
+INSERT INTO ECSCHEMA.Attendee (userID, instanceID, attendingPreEvent, seriesID)
+    VALUES (?, ?, ?, ?)
+]]>
+  </entry>
+
+  <entry key="deleteAttendee"><![CDATA[
+DELETE FROM ECSCHEMA.Attendee WHERE userID = ? AND instanceID = ?
+]]>
+  </entry>
+
+  <entry key="listAttendees"><![CDATA[
+SELECT * FROM ECSCHEMA.Attendee %s
+]]>
+  </entry>
+
+  <entry key="setAttendeeData"><![CDATA[
+UPDATE ECSCHEMA.Attendee SET %s WHERE userID = ? AND instanceID = ?
+]]>
+  </entry>
+
+  <entry key="getLastEmailTime"><![CDATA[
+SELECT lastEmailTime from ECSCHEMA.Attendee  WHERE userID = ? AND instanceID = ?
+]]>
+  </entry>
+
+  <entry key="getLastPhoneTime"><![CDATA[
+SELECT lastPhoneTime from ECSCHEMA.Attendee  WHERE userID = ? AND instanceID = ?
+]]>
+  </entry>
+
+  <entry key="prepareApplySeriesSV"><![CDATA[
+DELETE FROM ECSCHEMA.Attendee as tbla
+    WHERE tbla.userID = ? AND tbla.seriesID = ?
+    AND tbla.instanceID NOT IN (SELECT instanceID FROM ECMSCHEMA.SeriesInstance
+				AS tblb WHERE tbla.seriesID =tblb.seriesID)
+
+]]>
+  </entry>
+
+  <entry key="applySeriesSV"><![CDATA[
+INSERT INTO ECSCHEMA.Attendee(userID, instanceID, seriesID)
+    SELECT userID, instanceID, seriesID FROM
+	(SELECT userID FROM ECSCHEMA.UserInfo WHERE userID = ?) AS tbla
+	CROSS JOIN
+	(SELECT seriesID, instanceID FROM ECSCHEMA.SeriesInstance
+	 WHERE seriesID = ?) AS tblb
+]]>
+  </entry>
+
+  <entry key="applySeries1"><![CDATA[
+UPDATE ECSCHEMA.Attendee AS tbla SET attendeeState = 'CANCELLED'
+    WHERE tbla.userID = ? AND tbla.seriesID = ?
+      AND 0 = (SELECT COUNT(*) FROM ECSCHEMA.SeriesInstance AS tblb
+		WHERE tblb.seriesID = tbla.seriesID
+		  AND tblb.instanceID = tbla.instanceID)
+]]>
+  </entry>
+
+  <entry key="applySeries2"><![CDATA[
+UPDATE ECSCHEMA.Attendee AS tbla SET attendeeState = 'ACTIVE'
+    WHERE tbla.userID = ? AND tbla.seriesID = ?
+      AND NOT (tbla.attendeeState = 'ACTIVE')
+      AND 1 = (SELECT COUNT(*) from ECSCHEMA.SeriesInstance as tblb
+		WHERE tblb.seriesID = tbla.seriesID
+		  AND tblb.instanceID = tbla.instanceID)
+]]>
+  </entry>
+
+  <entry key="applySeries3"><![CDATA[
+INSERT INTO ECSCHEMA.Attendee(userID, instanceID, seriesID)
+    SELECT tbla.userID, tblb.instanceID, tblb.seriesID FROM
+        ECSCHEMA.UserInfo AS tbla,
+	ECSCHEMA.SeriesInstance AS tblb
+	WHERE tbla.userID = ? AND tblb.seriesID = ?
+	  AND 0 = (SELECT COUNT(*) FROM ECSCHEMA.Attendee as tblc
+	  		WHERE tblc.userID = tbla.userID 
+			  AND tblc.instanceID = tblb.instanceID
+			  AND tblc.seriesID = tblb.seriesID)
+]]>
+  </entry>
+
+  <entry key = "userfields"><![CDATA[
+SELECT (CASE WHEN lastNameFirst THEN lastName || ' ' || firstName
+	ELSE firstName || ' ' || lastName) AS fullName,
+    emailAddr, countryPrefix, cellNumber, carrierID
+    FROM ECSCHEMA.UserInfo  WHERE userid = ?
+]]>
+  </entry>
+
+  <entry key="calendarData"><![CDATA[
+SELECT
+	utbl.userID AS userID, otbl.ownerID as ownerID,
+	ltbl.locationID AS locationID, atbl.instanceID AS instanceID,
+	(utbl.uid || otbl.createTime || etbl.createTime
+	 || itbl.createTime) AS uid,
+	summary, otbl.idomain AS idomain, description,
+	preEventType, preEventOffset,
+	startDate, startTime, endDate, endTime, emailSeqno, phoneSeqno,
+	location, attendingPreEvent,
+	otbl.modTime AS modtimeO,
+	ltbl.modTime AS modtimeL,
+	etbl.modTime AS modtimeE,
+	itbl.modTime AS modtimeI,
+	atbl.modTime AS modtimeA,
+	atbl.createTime as createTime,
+	atbl.lastEmailTime as lastEmailTime,
+	atbl.lastPhoneTime as lastPhoneTime
+    FROM
+	(SELECT * from ECSCHEMA.UserInfo) AS utbl,
+	(SELECT * from ECSCHEMA.Owner) AS otbl,
+	(SELECT * from ECSCHEMA.Event) AS etbl,
+	(SELECT * from ECSCHEMA.EventInstance) AS itbl,
+	(SELECT * from ECSCHEMA.Location) AS ltbl,
+	(SELECT * from ECSCHEMA.Attendee) AS atbl
+    WHERE %s
+      utbl.status = 'ACTIVE'
+      AND atbl.userID = utbl.userID
+      AND atbl.instanceID = itbl.instanceID
+      AND itbl.locationID = ltbl.locationID
+      AND itbl.eventID = etbl.eventID
+      AND etbl.ownerID = otbl.ownerID
+      AND NOT (startDate < CURRENT_DATE)
+    ORDER BY utbl.userID, summary, startDate
+]]>
+  </entry>
+
+  <entry key="calFirstAlarm"><![CDATA[
+SELECT eventTime, alarmTime, forEmail, forPhone, modTime
+FROM ECSCHEMA.FirstAlarm
+WHERE userID = ? AND ownerID = ? AND locationID = ? AND weekday = ?
+ORDER BY eventTime ASC
+]]>
+  </entry>
+
+  <entry key="calSecondAlarm"><![CDATA[
+SELECT offset, forEmail, forPhone, modTime FROM ECSCHEMA.SecondAlarm
+WHERE userID = ? AND ownerID = ? AND locationID = ?
+]]>
+  </entry>
+
+ <entry key="nonAttendees"><![CDATA[
+SELECT utbl.userID FROM
+    (SELECT userID FROM ECSCHEMA.UserInfo) as utbl
+    WHERE userID NOT IN
+       (SELECT atbl.userID FROM
+           (SELECT userID, instanceID from ECSCHEMA.Attendee) as atbl,
+	   (SELECT instanceID, eventID, locationID, startDate
+		 FROM ECSCHEMA.EventInstance) AS itbl,
+	   (SELECT eventID, ownerID from ECSCHEMA.Event) AS etbl,
+	   (SELECT ownerID FROM ECSCHEMA.Owner) as otbl
+	 WHERE %s
+	       atbl.instanceID = itbl.instanceID
+	   AND itbl.eventID = etbl.eventID
+	   AND etbl.ownerID = otbl.ownerID
+	   AND NOT (itbl.startDate < CURRENT_DATE))
+]]>
+ </entry>
+
+ <entry key="getInstanceCount"><![CDATA[
+ SELECT COUNT(itbl.instanceID) FROM
+           (SELECT instanceID from ECSCHEMA.Attendee) as atbl,
+	   (SELECT instanceID, eventID, locationID, startDate
+		 FROM ECSCHEMA.EventInstance) AS itbl,
+	   (SELECT eventID, ownerID from ECSCHEMA.Event) AS etbl,
+	   (SELECT ownerID FROM ECSCHEMA.Owner) as otbl,
+	   (SELECT locationID from ECSCHEMA.Location) AS ltbl
+	 WHERE %s
+	       atbl.instanceID = itbl.instanceID
+	   AND itbl.locationID = ltbl.locationID
+	   AND itbl.eventID = etbl.eventID
+	   AND etbl.ownerID = otbl.ownerID
+	   AND NOT (itbl.startDate < CURRENT_DATE)
+]]>
+ </entry>
+
+</properties>
