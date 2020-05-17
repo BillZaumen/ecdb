@@ -9,7 +9,10 @@ import javax.swing.filechooser.*;
 import javax.swing.table.*;
 import java.beans.*;
 
-
+/**
+ * Custom file chooser for selecting files rather than opening them or
+ * saving them.
+ */
 public class SelectedFileChooser extends JFileChooser {
 
     public static final int APPROVE_OPTION = JFileChooser.APPROVE_OPTION;
@@ -19,16 +22,34 @@ public class SelectedFileChooser extends JFileChooser {
 
     boolean allowNewFile = true;
 
+    /**
+     * Constructor.
+     * @param allowNewFile true if a file name can be typed into this
+     *        component's text field; false otherwise
+     */
     public SelectedFileChooser(boolean allowNewFile) {
 	super();
 	this.allowNewFile  = allowNewFile;
     }
 
+    /**
+     * Constructor specifying a current directory.
+     * @param currentDirectory the current directory for this component
+     * @param allowNewFile true if a file name can be typed into this
+     *        component's text field; false otherwise
+     */
     public SelectedFileChooser(File currentDirectory, boolean allowNewFile) {
 	super(currentDirectory);
 	this.allowNewFile  = allowNewFile;
     }
 
+    /**
+     * Constructor specifying a current directory and file system view.
+     * @param currentDirectory the current directory for this component
+     * @param fsv the file system view
+     * @param allowNewFile true if a file name can be typed into this
+     *        component's text field; false otherwise
+     */
     public SelectedFileChooser(File currentDirectory, FileSystemView fsv,
 			       boolean allowNewFile)
     {
@@ -36,6 +57,12 @@ public class SelectedFileChooser extends JFileChooser {
 	this.allowNewFile  = allowNewFile;
     }
 
+    /**
+     * Constructor specifying a current directory and file system view.
+     * @param currentDirectoryPath the current directory for this component
+     * @param allowNewFile true if a file name can be typed into this
+     *        component's text field; false otherwise
+     */
     public SelectedFileChooser(String currentDirectoryPath,
 			       boolean allowNewFile)
     {
@@ -43,6 +70,12 @@ public class SelectedFileChooser extends JFileChooser {
 	this.allowNewFile  = allowNewFile;
     }
 
+    /**
+     * Constructor specifying a file system view.
+     * @param fsv the file system view
+     * @param allowNewFile true if a file name can be typed into this
+     *        component's text field; false otherwise
+     */
     public SelectedFileChooser(FileSystemView fsv, boolean allowNewFile) {
 	super(fsv);
 	this.allowNewFile  = allowNewFile;

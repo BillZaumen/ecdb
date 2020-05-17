@@ -4,6 +4,9 @@ import java.util.LinkedHashMap;
 import java.util.Vector;
 import javax.swing.*;
 
+/**
+ * Table-cell editor for ECDB Event instances.
+ */
 public class InstanceEditor extends DefaultCellEditor {
 
     private static JComboBox<ECDB.InstanceLabeledID>
@@ -16,7 +19,17 @@ public class InstanceEditor extends DefaultCellEditor {
 	return new JComboBox<ECDB.InstanceLabeledID>(labels);
     }
 
-    public InstanceEditor(ECDB ecdb, Connection conn,
+    /**
+     * Constructor.
+     * The arguments ownerID, eventId, and locationID are used to filter
+     * all event instances to select a useful subset.
+     * @param ecdb the instance of ECDB to use.
+     * @param conn a database connection obtained from ecdb
+     * @param ownerID the ownerID for an event; -1 for any owner
+     * @param eventID the eventID; -1 for any event
+     * @param locationID; -1 for any location
+     */
+      public InstanceEditor(ECDB ecdb, Connection conn,
 			  int ownerID, int eventID, int locationID)
 	throws SQLException
     {

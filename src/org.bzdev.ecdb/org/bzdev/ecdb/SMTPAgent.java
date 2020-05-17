@@ -5,8 +5,15 @@ import java.util.ServiceLoader;
 import java.util.Vector;
 import javax.swing.JFrame;
 
+/**
+ * Base class for classes that can send email messages
+ * using SMTP.
+ */
 public abstract class SMTPAgent {
 
+    /**
+     * Constructor.
+     */
     protected SMTPAgent() {}
 
     static ServiceLoader<SMTPAgentSPI> providers =

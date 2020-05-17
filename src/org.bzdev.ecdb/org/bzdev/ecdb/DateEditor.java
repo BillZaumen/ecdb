@@ -37,6 +37,9 @@ class DateEditor extends DefaultCellEditor {
 
     static boolean DEBUG = false;
     
+    /**
+     * Constructor.
+     */
     public DateEditor() {
 	super(new JFormattedTextField());
 	ftf = (JFormattedTextField) getComponent();
@@ -67,6 +70,16 @@ class DateEditor extends DefaultCellEditor {
     }
 
     //Override to invoke setValue on the formatted text field.
+    /** Implements the TableCellEditor interface.
+     * @param table the JTable requesting tha editor; null if no table
+     * @param value the value of the cell to be edited; may not be null
+     * @param isSelected true if the cell is to be rendered with highlighting
+     *        to show that the cell is selected
+     * @param row the index of the row for the cell being edited
+     * @param column the index of the column for the cell being edited
+     * @return the component that provides the editor
+    */
+    @Override
     public Component getTableCellEditorComponent(JTable table,
 						 Object value,
 						 boolean isSelected,
@@ -84,6 +97,10 @@ class DateEditor extends DefaultCellEditor {
 	return ftf;
     }
 
+    /**
+     * Get the value contained in the editor.
+     * @return the value contained in the editor
+     */
     //Override to ensure that the value remains a java.sql.Date.
     public Object getCellEditorValue() {
 	JFormattedTextField ftf = (JFormattedTextField)getComponent();
@@ -116,6 +133,12 @@ class DateEditor extends DefaultCellEditor {
     //it isn't.  If it's OK for the editor to go
     //away, we need to invoke the superclass's version 
     //of this method so that everything gets cleaned up.
+    /**
+     * Stops editing.
+     * @return true normally; false if the editor cannot create a
+     *         date (e.g., because of a syntax error in a text field)
+     */
+    @Override
     public boolean stopCellEditing() {
 	JFormattedTextField ftf = (JFormattedTextField)getComponent();
 	if (ftf.isEditValid()) {

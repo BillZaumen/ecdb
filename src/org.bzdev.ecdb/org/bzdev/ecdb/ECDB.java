@@ -32,6 +32,9 @@ import org.bzdev.util.TemplateProcessor;
 import org.bzdev.util.TemplateProcessor.KeyMap;
 import org.bzdev.util.TemplateProcessor.KeyMapList;
 
+/**
+ * Event-Calendar Database Session.
+ */
 public class ECDB implements AutoCloseable {
 
     static final Charset UTF8 = Charset.forName("UTF-8");
@@ -68,16 +71,27 @@ public class ECDB implements AutoCloseable {
 	configFile = file;
     }
 
+    /**
+     * Constructor.
+     */
     public ECDB() throws IOException, ECDBException {
 	setup(null);
 	init();
     }
 
+    /**
+     * Constructor given a configuration file.
+     * @param file the configuration file
+     */
     public ECDB(File file) throws IOException, ECDBException {
 	setup(file);
 	init();
     }
 
+    /**
+     * Constructor given configuration properties.
+     * @param properties the properties
+     */
     public ECDB(Properties properties) throws IOException, ECDBException {
 	if (properties == null) {
 	    throw new IllegalArgumentException("null argument");
@@ -171,6 +185,10 @@ public class ECDB implements AutoCloseable {
     long cellEmailAddrTimeout =
 	Long.parseLong(DEFAULT_CELL_EMAIL_TIMEOUT);
 
+    /**
+     * Get the timeout for email addresses assocated with a cell phone number.
+     * @return the timeout in units of days
+     */
     public long getCellEmailAddrTimeout() {return cellEmailAddrTimeout;}
 
 
@@ -253,65 +271,6 @@ public class ECDB implements AutoCloseable {
 
 	String type = dbProperties.getProperty("type");
 	typeSuffix = (type == null)? EMPTY_STRING: "." + type;
-	/*
-	String type = dbProperties.getProperty("type");
-	typeSuffix = (type == null)? EMPTY_STRING: "." + type;
-	String dbName = dbProperties.getProperty("dbName");
-	if (dbName != null) {
-	    dbName = dbName.replace("$(type)", type);
-	    if (dbName.indexOf('$') != -1) {
-		throw new ECDBException();
-	    }
-	    dbProperties.setProperty("dbName", dbName);
-	} else {
-	    dbName = EMPTY_STRING;
-	}
-	String dbPath = dbProperties.getProperty("dbPath");
-	if (dbPath != null) {
-	    dbPath = dbPath.replace("$(dbName)", dbName)
-		.replace("$(type)", type);
-	    if (dbPath.indexOf('$') != -1) {
-		throw new ECDBException();
-	    }
-	    dbProperties.setProperty("dbPath", dbPath);
-	} else {
-	    dbPath = EMPTY_STRING;
-	}
-
-	String createURL = dbProperties.getProperty("createURL");
-	if (createURL != null) {
-	    createURL = createURL.replace("$(dbPath)", dbPath)
-		.replace("$(dbName)", dbName)
-		.replace("$(type)", type);
-	    if (createURL.indexOf('$') != -1) {
-		throw new ECDBException();
-	    }
-	    dbProperties.setProperty("createURL", createURL);
-	}
-
-	String openURL = dbProperties.getProperty("openURL");
-	if (openURL != null) {
-	    openURL = openURL.replace("$(dbPath)", dbPath)
-		.replace("$(dbName)", dbName)
-		.replace("$(type)", type);
-	    if (openURL.indexOf('$') != -1) {
-		throw new ECDBException();
-	    }
-	    dbProperties.setProperty("openURL", openURL);
-	}
-
-
-	String shutdownURL = dbProperties.getProperty("shutdownURL");
-	if (shutdownURL != null) {
-	    shutdownURL = shutdownURL.replace("$(dbPath)", dbPath)
-		.replace("$(dbName)", dbName)
-		.replace("$(type)", type);
-	    if (shutdownURL.indexOf('$') != -1) {
-		throw new ECDBException();
-	    }
-	    dbProperties.setProperty("shutdownURL", shutdownURL);
-	}
-	*/
 	String configRolesString = dbProperties.getProperty("configRoles");
 	if (configRolesString != null) {
 	    configRolesString = configRolesString.trim();
@@ -406,10 +365,18 @@ public class ECDB implements AutoCloseable {
 
     private HashSet<Connection> connections = new HashSet<>();
 
+    /**
+     * Get a database connection.
+     * @return a connection
+     */
     public Connection getConnection() throws SQLException {
 	return getConnection(false);
     }
 
+    /**
+     * Determine if this session has been closed.
+     * @return true if the session has been closed; false otherwise
+     */
     public boolean isClosed() {return isClosed;}
 
     private Connection getConnection(boolean create) throws SQLException {
@@ -434,6 +401,9 @@ public class ECDB implements AutoCloseable {
 	return connection;
     }
 
+    /**
+     * Close this ECDB session.
+     */
     public void close() throws SQLException {
 	Iterator<Connection> it = connections.iterator();
 	while (it.hasNext()) {
@@ -477,6 +447,16 @@ public class ECDB implements AutoCloseable {
     private static final String EKEY_START = "email.";
     private static final int EKEY_START_LEN = EKEY_START.length();
 
+    /**
+     * Get the full email address for a user.
+     * A full email address consists of the user's name followed by
+     * an email address delimited by '&lt;' and '&gt;'.
+     * @param conn the database connection
+     * @param userID the recipient's user ID
+     * @param useEmail true if the recipient's email address will be used;
+     *        false if the SMS email address for the recipient's cell phone
+     *        is used.
+     */
     public String getFullEmailAddress(Connection conn, int userID,
 				      boolean useEmail)
 	throws SQLException
@@ -523,57 +503,6 @@ public class ECDB implements AutoCloseable {
 	throws SQLException
     {
 	Properties emailProperties = new Properties();
-
-	/*
-	// load defaults stored in the database.
-	Statement statement = conn.createStatement();
-	statement.execute("SELECT * FROM " + dbProperties.get("ECSCHEMA")
-			  + ".EmailProperties");
-	ResultSet rs = statement.getResultSet();
-
-	while (rs.next()) {
-	    String key = rs.getString(1);
-	    String value = rs.getString(2);
-	    if (key.startsWith(B64KEY_START)) {
-		byte[] data = Base64.getDecoder().decode(value);
-		ByteArrayInputStream is = new ByteArrayInputStream(data);
-		StringBuilder sb = new StringBuilder();
-		try {
-		    CopyUtilities.copyStream(is, sb, UTF8);
-		} catch (Exception eio) {
-		    throw new UnexpectedExceptionError();
-		}
-		key = key.substring(B64KEY_START_LEN);
-		emailProperties.setProperty(key, sb.toString());
-	    } else if (key.startsWith(EB64KEY_START)) {
-		byte[] data = Base64.getDecoder().decode(value);
-		ByteArrayInputStream is = new ByteArrayInputStream(data);
-		key = key.substring(EB64KEY_START_LEN);
-		try {
-		    ProcessBuilder pb = new ProcessBuilder("gpg", "-d");
-		    Process process = pb.start();
-		    Thread ot = new Thread(() -> {
-			    try {
-				OutputStream os = process.getOutputStream();
-				CopyUtilities.copyStream(is, os);
-				os.close();
-			    } catch (IOException eio) {
-				System.err.println(eio.getMessage());
-			    }
-		    });
-		    StringBuilder sb = new StringBuilder();
-		    CopyUtilities.copyStream(process.getInputStream(),
-					     sb, UTF8);
-		    emailProperties.setProperty(key, sb.toString());
-		} catch (IOException eio) {
-		    System.err.println(eio.getMessage());
-		}
-	    } else {
-		emailProperties.setProperty(key, value);
-	    }
-	}
-	// allow the configuration file to override values
-	*/
 	for (String key: dbProperties.stringPropertyNames()) {
 	    if (key.startsWith(EKEY_START)) {
 		String value = dbProperties.getProperty(key);
@@ -590,6 +519,12 @@ public class ECDB implements AutoCloseable {
     static final String AUTHUSER = "auth.user.";
     static final int AUTHUSER_LEN = AUTHUSER.length();
 
+    /**
+     * Create a database.
+     * This method uses information in the configuration file
+     * to create a database's tables and, when possible, the
+     * database itself.
+     */
     public void createDB() throws IOException, SQLException
     {
 	String dbname = dbProperties.getProperty("dbName", "ecdb");
@@ -756,6 +691,10 @@ public class ECDB implements AutoCloseable {
     }
 
 
+    /**
+     * Configure a database to allow roles specified in the
+     * configuration file.
+     */
     public void allowRoles() throws IOException, SQLException
     {
 	if (hasRoles()) {
@@ -787,6 +726,9 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Create a database's ECDB tables.
+     */
     public void createTables() throws IOException, SQLException
     {
 
@@ -998,6 +940,11 @@ public class ECDB implements AutoCloseable {
 
     private static final String EMPTY_STRING = "";
  
+    /**
+     * Add a cellphone carrier.
+     * @param conn the database connection
+     * @param carrier the carrier's name
+     */
     public void addCarrier(Connection conn, String carrier)
 	throws SQLException
     {
@@ -1026,6 +973,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add  cellphone carriers.
+     * @param conn the database connection
+     * @param carriers an array containing the carrier's name
+     */
     public void addCarrier(Connection conn, String[] carriers)
 	throws SQLException
     {
@@ -1056,6 +1008,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete a carrier by ID.
+     * @param conn the database connection
+     * @param carrierID the carrier's ID
+     */
     public void deleteCarrier(Connection conn, int carrierID)
 	throws SQLException
     {
@@ -1080,6 +1037,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete a carrier by name.
+     * @param conn the database connection
+     * @param carrier the carrier's name
+     */
     public void deleteCarrier(Connection conn, String carrier)
 	throws SQLException
     {
@@ -1123,6 +1085,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete carriers by name.
+     * @param conn the database connection
+     * @param carriers an array containing the names of the carriers to delete
+     */
     public void deleteCarrier(Connection conn, String[] carriers)
 	throws SQLException
     {
@@ -1169,6 +1136,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete carriers by ID.
+     * @param conn the database connection
+     * @param carrierIDs an array containing the IDs of the carriers to delete
+     */
     public void deleteCarrier(Connection conn, int[] carrierIDs)
 	throws SQLException
     {
@@ -1197,6 +1169,12 @@ public class ECDB implements AutoCloseable {
 
     private static final String[] emptyStringArray = new String[0];
 
+    /**
+     * List all carriers by name and ID.
+     * @param conn the database connection
+     * @return an array, each element of which specifies a carrier ID and
+     *         the corresponding name
+     */
     public CarrierLabeledID[] listCarrierLabeledIDs(Connection conn)
 	throws SQLException
     {
@@ -1210,6 +1188,16 @@ public class ECDB implements AutoCloseable {
 	return result;
     }
 
+    /**
+     * List carriers given name-matching patterns.
+     * The vector returned represents a table.
+     * @param conn the database connection
+     * @param patterns the search patterns
+     * @param full true if if the table rows contains a carrier ID followed
+     *        by a {@link CarrierLabeledID}; false if the table contains
+     *        only a carrier ID in each row
+     * @return a table.
+     */
     public Vector<Vector<Object>>
 	listCarriers(Connection conn, String[] patterns, boolean full)
 	throws SQLException
@@ -1268,6 +1256,18 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List carriers given their IDs.
+     * The vector returned represents a table, each row ofwhich
+     * contains a carrier ID followed optionally by a string. Each
+     * carrier ID is an integer and each carrier name is a string.
+     * @param conn the database connection
+     * @param ids an array of carrier IDs.
+     * @param full true if if the table rows contains a carrier ID followed
+     *        by the carrier name; false if the table contains
+     *        only a carrier ID in each row
+     * @return a table.
+     */
     public Vector<Vector<Object>>
 	listCarriers(Connection conn, int[] ids, boolean full)
 	throws SQLException
@@ -1323,6 +1323,13 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
   
+    /**
+     * Get a carrier ID given a carrier name.
+     * @param conn the database connection
+     * @param carrier the carrier name
+     * @return the carrier ID corresponding to a carrier name; -1 if there
+     *         is none.
+     */
     int findCarrier(Connection conn, String carrier)
 	throws SQLException, IllegalArgumentException
     {
@@ -1343,12 +1350,26 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Set the name of a carrier.
+     * @param conn the database connection
+     * @param carrierID a carrierID
+     * @param carrierName the new carrier name
+     */
     public void setCarrier(Connection conn, int carrierID, String carrierName)
 	throws IllegalArgumentException, SQLException
     {
 	setCarrier(conn, carrierID, carrierName, true);
     }
 
+    /**
+     * Set the name of a carrier, with control over database commits.
+     * @param conn the database connection
+     * @param carrierID a carrierID
+     * @param carrierName the new carrier name
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setCarrier(Connection conn, int carrierID, String carrierName,
 			   boolean commit)
 	throws IllegalArgumentException, SQLException
@@ -1390,7 +1411,18 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
-
+    /**
+     * List a carrier map.
+     * The return value represents a table, each row of which contains
+     * a country prefix, a carrierID or a carrier labeled-ID, and an
+     * email domain of a gateway to the SMS service.
+     * @param conn the database connection
+     * @param countryPrefix the country prefix or code
+     * @param carrier the name of a carrier
+     * @param full true if the second row in the table is a carrier labeled-ID;
+     *             false if it is a carrier ID
+     * @return a table containing matching entries
+     */
     Vector<Vector<Object>> listCarrierMap(Connection conn,
 					  String countryPrefix,
 					  String carrier,
@@ -1448,6 +1480,17 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List a carrier map.
+     * The return value represents a table, each row of which contains
+     * a country prefix, a carrierID or a carrier labeled-ID, and an
+     * email domain of a gateway to the SMS service.
+     * @param conn the database connection
+     * @param countryPrefix the country prefix or code
+     * @param carrierID the carrier ID
+     * @return the email domain used for SMS messages sent via email; null
+     *         if there is none
+     */
     public String getCarrierDomain(Connection conn, String countryPrefix,
 				   int carrierID)
 	throws SQLException
@@ -1470,6 +1513,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Set the carrier mapping.
+     * @param conn the database connection
+     * @param countryPrefix the country prefix or code
+     * @param carrierID the carrier ID
+     * @param domain the domain name for the email gateway used to forward
+     *        an email to a carrier's SMS service
+     */
     public void setCarrierMapping(Connection conn, String countryPrefix,
 				  int carrierID, String domain)
 	throws SQLException, IllegalArgumentException
@@ -1477,6 +1528,16 @@ public class ECDB implements AutoCloseable {
 	setCarrierMapping(conn, countryPrefix, carrierID, domain, true);
     }
 
+    /**
+     * Set the carrier mapping.
+     * @param conn the database connection
+     * @param countryPrefix the country prefix or code
+     * @param carrierID the carrier ID
+     * @param domain the domain name for the email gateway used to forward
+     *        an email to a carrier's SMS service
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setCarrierMapping(Connection conn, String countryPrefix,
 				  int carrierID, String domain,
 				  boolean commit)
@@ -1539,6 +1600,20 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add a new user.
+     * @param conn the database connection
+     * @param firstName the user's first name
+     * @param lastName the user's last name
+     * @param title the user's title; null if there is none
+     * @param lastNameFirst true if the first name follows the last
+     *        name when printed; false if the last name follows the
+     *        first name
+     * @param emailAddr the user's email address
+     * @param the user's country prefix (1 for the U.S.)
+     * @param the user's cell phone number
+     * @param carrierID the ID for the user's cell phone carrier
+     */
     public void addUserInfo(Connection conn,
 			    String firstName, String lastName,
 			    boolean lastNameFirst, String title,
@@ -1549,6 +1624,23 @@ public class ECDB implements AutoCloseable {
 	addUserInfo(conn, firstName, lastName, lastNameFirst, title,
 		    emailAddr, countryPrefix, cellNumber, carrierID, true);
     }
+
+    /**
+     * Add a new user, indicating if the new table entry should be committed.
+     * @param conn the database connection
+     * @param firstName the user's first name
+     * @param lastName the user's last name
+     * @param title the user's title; null if there is none
+     * @param lastNameFirst true if the first name follows the last
+     *        name when printed; false if the last name follows the
+     *        first name
+     * @param emailAddr the user's email address
+     * @param the user's country prefix (1 for the U.S.)
+     * @param the user's cell phone number
+     * @param carrierID the ID for the user's cell phone carrier
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addUserInfo(Connection conn,
 			    String firstName, String lastName,
 			    boolean lastNameFirst, String title,
@@ -1617,6 +1709,9 @@ public class ECDB implements AutoCloseable {
 	}
     }
 			    
+    /**
+     *
+     */
     public void deleteUserInfo(Connection conn, int userID)
 	throws SQLException
     {
@@ -1641,12 +1736,25 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete user data.
+     * Each deletion must be confirmed.
+     * @param conn the database connection
+     * @param pattern a pattern used to find users to delete
+     */
     public void deleteUserInfo(Connection conn, String pattern)
 	throws SQLException
     {
 	deleteUserInfo(conn, pattern, false);
     }
 
+    /**
+     * Delete user data optionally asking for confirmation.
+     * @param conn the database connection
+     * @param pattern a pattern used to find users to delete
+     * @param force true if all matching users should be deleted; false if
+     *        each deletion must be confirmed
+     */
     public void deleteUserInfo(Connection conn, String pattern, boolean force)
 	throws SQLException
     {
@@ -1716,7 +1824,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
-
+    /**
+     * Delete user data based on user IDs.
+     * @param conn the database connection
+     * @param userIds the user IDs for the users that are to be deleted
+     */
     public void deleteUserInfo(Connection conn, int[] userIDs)
 	throws SQLException
     {
@@ -1743,6 +1855,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Get a user labeled ID for a specified user
+     * @param conn the database connection
+     * @param userID the user ID
+     */
     public UserLabeledID getUserLabeledID(Connection conn, int userID)
 	throws IllegalArgumentException, SQLException
     {
@@ -1765,6 +1882,11 @@ public class ECDB implements AutoCloseable {
 	return null;
     }
 
+    /**
+     * list the user labeled IDs for a specified pattern
+     * @param conn the database connection
+     * @param pattern the pattern
+     */
     public UserLabeledID[] listUserLabeledIDs(Connection conn, String pattern)
 	throws SQLException
     {
@@ -1787,6 +1909,17 @@ public class ECDB implements AutoCloseable {
 	return labeledIDs;
     }
 
+    /**
+     * List users matching a pattern.
+     * A full row lists the user ID, first name, last name, last-name
+     * first flag, title, email address, country prefix, cell-phone
+     * number, carrier, and status.
+     * @param conn the database connection
+     * @param pattern the pattern
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only a
+     *        user ID
+     */
     public Vector<Vector<Object>>
 	listUserInfo(Connection conn, String pattern, boolean full)
 	throws SQLException
@@ -1794,6 +1927,17 @@ public class ECDB implements AutoCloseable {
 	return listUserInfo(conn, pattern.split("\\|"), full);
     }
 
+    /**
+     * List users matching a pattern.
+     * A full row lists the user ID, first name, last name, last-name
+     * first flag, title, email address, country prefix, cell-phone
+     * number, carrier, and status.
+     * @param conn the database connection
+     * @param patterns the patterns
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only a
+     *        user ID
+     */
     public Vector<Vector<Object>>
 	listUserInfo(Connection conn, String[] patterns, boolean full)
 	throws SQLException
@@ -1849,6 +1993,7 @@ public class ECDB implements AutoCloseable {
 			    } else if (s.equals("CANCELLED")) {
 				status = UserStatus.CANCELLED;
 			    }
+			    row.add(status);
 			    vector.add(row);
 			} else {
 			    Vector<Object> row = new Vector<Object>(1);
@@ -1927,6 +2072,16 @@ public class ECDB implements AutoCloseable {
 
     static TemplateProcessor.KeyMap emptymap = new TemplateProcessor.KeyMap();
 
+    /**
+     * Get a user's keymap.
+     * Keymaps are used by template processors.
+     * the keymap's keys are firstName, lastName, noFirstName, lastName,
+     * noLastName, lastNameFirst, firstNameLast, title, and noTitle
+     * @param conn the database connection
+     * @param userID the user's user id
+     * @return the user's key map
+     * @see TemplateProcessor
+     */
     public TemplateProcessor.KeyMap getUserKeyMap(Connection conn, int userID)
 	throws IllegalArgumentException, SQLException
     {
@@ -1973,6 +2128,17 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * List users matching a list of user Ids.
+     * A full row lists the user ID, first name, last name, last-name
+     * first flag, title, email address, country prefix, cell-phone
+     * number, carrier, and status.
+     * @param conn the database connection
+     * @param ids the user IDs
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only a
+     *        user ID
+     */
     public Vector<Vector<Object>>
 	listUserInfo(Connection conn, int[] ids, boolean full)
 	throws SQLException
@@ -2011,6 +2177,7 @@ public class ECDB implements AutoCloseable {
 			} else if (s.equals("CANCELLED")) {
 			    status = UserStatus.CANCELLED;
 			}
+			row.add(status);
 			vector.add(row);
 		    } else {
 			Vector<Object> row = new Vector<Object>(1);
@@ -2044,6 +2211,7 @@ public class ECDB implements AutoCloseable {
 			    } else if (s.equals("CANCELLED")) {
 				status = UserStatus.CANCELLED;
 			    }
+			    row.add(status);
 			    vector.add(row);
 			} else {
 			    Vector<Object> row = new Vector<Object>(1);
@@ -2060,6 +2228,12 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
   
+    /**
+     * Find the user ID for a user matching a pattern.
+     * @param conn the database connection
+     * @param pattern a pattern to match
+     * @return the user ID
+     */
     int findUserInfo(Connection conn, String pattern)
 	throws SQLException, IllegalArgumentException
     {
@@ -2126,6 +2300,15 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Get the email address for a user's SMS gateway.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param full true if the email address includes the user's name
+     *        with the email address in angle brackets
+     *        false if the email address alone is returned
+     * @return the email address
+     */
     public String getUserCellphoneEmail(Connection conn, int userID,
 					boolean full)
 	throws IllegalArgumentException, SQLException
@@ -2168,6 +2351,26 @@ public class ECDB implements AutoCloseable {
 	return address;
     }
 
+
+    /**
+     * Set the table entry for a user.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param firstName the user's first name; null if ignored
+     * @param lastName the user's last name; null if ignored
+     * @param lastNameFirst true if the user's last name is followed by
+     *        the user's first name; false if the user's first name is
+     *        followed by theuser's last name; null if ignored
+     * @param tite the user's title; null if ignored
+     * @param emailAddr the user's email address; null if ignored
+     * @param countryPrefix the country prefix for the user's cell-phone
+     *         number; null if ignored
+     * @param cellNumber the user's cell-phone number; null if ignored
+     * @param carrier ID the carrierID for the user's cell-phone carrier;
+     *        -1 if ignored
+     * @param status the user's status - ACTIVE, NOTACTIVE, CANCELLED;
+     *        null if ignored
+     */
     public void setUserInfo(Connection conn, int userID,
 			    String firstName, String lastName,
 			    Boolean lastNameFirst, String title,
@@ -2182,6 +2385,28 @@ public class ECDB implements AutoCloseable {
     }
     
 
+    /**
+     * Set the table entry for a user, indicating if the table change
+     * should be committed.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param firstName the user's first name; null if ignored
+     * @param lastName the user's last name; null if ignored
+     * @param lastNameFirst true if the user's last name is followed by
+     *        the user's first name; false if the user's first name is
+     *        followed by theuser's last name; null if ignored
+     * @param tite the user's title; null if ignored
+     * @param emailAddr the user's email address; null if ignored
+     * @param countryPrefix the country prefix for the user's cell-phone
+     *        number; null if ignored
+     * @param cellNumber the user's cell-phone number; null if ignored
+     * @param carrier ID the carrierID for the user's cell-phone carrier;
+     *        -1 if ignored
+     * @param status the user's status - ACTIVE, NOTACTIVE, CANCELLED;
+     *        null if ignored
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setUserInfo(Connection conn, int userID,
 			    String firstName, String lastName,
 			    Boolean lastNameFirst, String title,
@@ -2354,6 +2579,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
  
+    /**
+     * Add a new owner to the owner table.
+     * @param conn the database connection
+     * @param label a short string naming the owner
+     * @param summary a description of the owner
+     * @param idomain the internet domain name associated with the
+     *        owner
+     */
     public void addOwner(Connection conn,
 			String label, String summary,
 			String idomain)
@@ -2363,6 +2596,17 @@ public class ECDB implements AutoCloseable {
     }
 
 
+    /**
+     * Add a new owner to the owner table, indicating if database changes
+     * should be committed.
+     * @param conn the database connection
+     * @param label a short string naming the owner
+     * @param summary a description of the owner
+     * @param idomain the internet domain name associated with the
+     *        owner
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addOwner(Connection conn,
 			 String label, String summary,
 			 String idomain, boolean commit)
@@ -2407,6 +2651,11 @@ public class ECDB implements AutoCloseable {
 	       
     }
 			    
+    /**
+     * Delete an entry from the owner table.
+     * @param conn the database connection
+     * @param ownerID the owner ID for the entry
+     */
     public void deleteOwner(Connection conn, int ownerID)
 	throws SQLException
     {
@@ -2431,12 +2680,25 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete an entry from the owner table given a search pattern.
+     * @param conn the database connection
+     * @param ownerID the owner ID for the entry
+     */
     public void deleteOwner(Connection conn, String pattern)
 	throws SQLException
     {
 	deleteOwner(conn, pattern, false);
     }
 
+    /**
+     * Delete an entry from the owner table given a search pattern, indicating
+     * if the deletion is interactive.
+     * @param conn the database connection
+     * @param ownerID the owner ID for the entry
+     * @param force true if all matching users should be deleted; false if
+     *        each deletion must be confirmed
+     */
     public void deleteOwner(Connection conn, String pattern, boolean force)
 	throws SQLException
     {
@@ -2499,6 +2761,11 @@ public class ECDB implements AutoCloseable {
     }
 
 
+    /**
+     * Delete an entry from the owner table a list of owner IDs.
+     * @param conn the database connection
+     * @param ownerID the owner ID for the entry
+     */
     public void deleteOwner(Connection conn, int[] ownerIDs)
 	throws SQLException
     {
@@ -2525,6 +2792,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /*
+     * List the owner labeled IDs for every owner.
+     * This method is useful for creating a combo box allowing a user
+     * to select an owner.
+     * @param conn the database connection
+     * @return a list, starting with "[ All ]", followed by the labels
+     *         for every owner
+     */
     public Object[] listOwnerLabels(Connection conn) throws SQLException {
 	// This returns a string because JOptionPane 'show' methods
 	// do not take vectors as arguments, whereas JCombobox can
@@ -2540,6 +2815,13 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
+    /*
+     * List the owner labeled IDs for every owner.
+     * This method is useful for creating a combo box allowing a user
+     * to select an owner.
+     * @param conn the database connection
+     * @return a list containing owner labeled IDs for every owner
+     */
     public OwnerLabeledID[] listOwnerLabeledIDs(Connection conn)
 	throws SQLException
     {
@@ -2557,8 +2839,17 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
-
-
+    /**
+     * List owners matching a series of patterns
+     * When the argument full has the value true, each row contains
+     * an owner ID, followed by a label, followed by a summary,
+     * followed by an Internet domain name.
+     * @param conn the database connection
+     * @param patterns a list of patterns
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only an
+     *        owner ID
+     */
     public Vector<Vector<Object>>
 	listOwners(Connection conn, String[] patterns, boolean full)
 	throws SQLException
@@ -2635,6 +2926,17 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List owners matching each in series of owner IDs.
+     * When the argument full has the value true, each row contains
+     * an owner ID, followed by a label, followed by a summary,
+     * followed by an Internet domain name.
+     * @param conn the database connection
+     * @param ids a list of owner IDs
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only an
+     *        owner ID
+     */
     public Vector<Vector<Object>>
 	listOwners(Connection conn, int[] ids, boolean full)
 	throws SQLException
@@ -2694,6 +2996,12 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
   
+    /**
+     * Get the owner ID for an owner that matches a pattern
+     * @param conn the database connection
+     * @param pattern the pattern
+     * @return the corresponding ownerID; -1 if there is no match
+     */
     int findOwner(Connection conn, String pattern)
 	throws SQLException, IllegalArgumentException
     {
@@ -2723,6 +3031,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Set fields in the owner table.
+     * @param conn the database connection
+     * @param ownerID the owner ID for the fields to set
+     * @param label the label; null if ignored
+     * @param summary the summary; null if ignored
+     * @param idomain the internet domain name; null if ignored
+     */
     public void setOwner(Connection conn, int ownerID,
 			 String label, String summary, String idomain)
 	throws SQLException
@@ -2730,6 +3046,16 @@ public class ECDB implements AutoCloseable {
 	setOwner(conn, ownerID, label, summary, idomain, true);
     }
 
+    /**
+     * Set fields in the owner table, indicating if changes should be committed.
+     * @param conn the database connection
+     * @param ownerID the owner ID for the fields to set
+     * @param label the label; null if ignored
+     * @param summary the summary; null if ignored
+     * @param idomain the internet domain name; null if ignored
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setOwner(Connection conn, int ownerID,
 			 String label, String summary,
 			 String idomain, boolean commit)
@@ -2796,6 +3122,12 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add an entry to the location table.
+     * @param conn the database connection
+     * @param label the label
+     * @param location a description of the location
+     */
     public void addLocation(Connection conn,
 			    String label, String location)
 	throws SQLException
@@ -2803,6 +3135,15 @@ public class ECDB implements AutoCloseable {
 	addLocation(conn, label, location, true);
     }
 
+    /**
+     * Add an entry to the location table, indicating if the database
+     * change should be committed.
+     * @param conn the database connection
+     * @param label the label
+     * @param location a description of the location
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addLocation(Connection conn, String label, String location,
 			    boolean commit)
 	throws SQLException
@@ -2839,6 +3180,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 			    
+    /**
+     * Delete a row from the location table
+     * @param conn the database connection
+     * @param locationID the location ID
+     */
     public void deleteLocation(Connection conn, int locationID)
 	throws SQLException
     {
@@ -2863,12 +3209,25 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete rows from the location table given a pattern.
+     * @param conn the database connection
+     * @param pattern a search pattern
+     */
     public void deleteLocation(Connection conn, String pattern)
 	throws SQLException
     {
 	deleteLocation(conn, pattern, false);
     }
 
+    /**
+     * Delete a row from the location table given a pattern and indicating
+     * if the deletion is interactive.
+     * @param conn the database connection
+     * @param pattern a search pattern
+     * @param force true if all entries that match the pattern should be
+     *             automatically deleted; false if the deletion is interactive
+     */
     public void deleteLocation(Connection conn, String pattern, boolean force)
 	throws SQLException
     {
@@ -2932,7 +3291,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
-
+    /**
+     * Delete rows from the location table given a list of location IDs
+     * @param conn the database connection
+     * @param locationIDs the IDs of the locations to be deleted
+     */
     public void deleteLocation(Connection conn, int[] locationIDs)
 	throws SQLException
     {
@@ -2959,6 +3322,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * List the location labels in the location table
+     * This method is intended for building combo boxes and similar
+     * GUI components. The initial entry indicates that all locations
+     * should be selected.
+     * @param conn the database connection
+     * @return the location labels, prefaced with the "[ All ]"
+     */
     public Object[] listLocationLabels(Connection conn) throws SQLException {
 	// This returns a string because JOptionPane 'show' methods
 	// do not take vectors as arguments, whereas JCombobox can
@@ -2974,11 +3345,27 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
+    /**
+     * List the location labeled IDs for all locations in the location table.
+     * @param conn the database connection
+     * @return the location labeled IDs
+     */
     public LocationLabeledID[] listLocationLabeledIDs(Connection conn)
 	throws SQLException
     {
 	return listLocationLabeledIDs(conn, false);
     }
+
+    /**
+     * List the location labeled IDs for all locations in the location table,
+     * specifying whether an 'all' entry should appear first. The 'all'
+     * labeled ID is an ID whose label is "[ All ]" and whose location id
+     * is -1, which is used as a signal that all IDs are wanted.
+     * @param conn the database connection
+     * @param all true if an 'all' labeled ID should appear first; false if
+     *        this ID never appears
+     * @return the location labeled IDs
+     */
     public LocationLabeledID[] listLocationLabeledIDs(Connection conn,
 						      boolean all)
 	throws SQLException
@@ -2999,6 +3386,16 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
+    /**
+     * List rows from the location table matching a pattern.
+     * For the full listing, each row contains the location ID,
+     * followed by the label, followed by the location.
+     * @param conn the database connection
+     * @param pattern the pattern to which labels should match
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only a
+     *        location ID
+     */
     public Vector<Vector<Object>>
 	listLocations(Connection conn, String[] patterns, boolean full)
 	throws SQLException
@@ -3073,6 +3470,17 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List rows from the location table matching specified ids.
+     * For the full listing, each row contains the location ID,
+     * followed by the label, followed by the location.
+     * @param conn the database connection
+     * @param ids the location IDs to match
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only a
+     *        location ID
+     * @return a table whose rows are described above
+     */
     public Vector<Vector<Object>>
 	listLocations(Connection conn, int[] ids, boolean full)
 	throws SQLException
@@ -3130,6 +3538,12 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
   
+    /**
+     * Get the location ID for the location whose label matches a pattern.
+     * @param conn the database connection
+     * @param pattern the pattern
+     * @return the location ID; -1 if there is no match
+     */
     int findLocation(Connection conn, String pattern)
 	throws SQLException, IllegalArgumentException
     {
@@ -3159,6 +3573,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Set fields in the location table.
+     * @param conn the database connection
+     * @param locationID the location ID of the fields to set
+     * @param label the label; null if this field is not changed
+     * @param location the location description; null if this field is
+     *        not changed
+     */
     public void setLocation(Connection conn, int locationID,
 			    String label, String location)
 	throws SQLException
@@ -3166,6 +3588,15 @@ public class ECDB implements AutoCloseable {
 	setLocation(conn, locationID, label, location, true);
     }
 
+    /**
+     * Set fields in the location table, indicating if the database changes
+     * should be committed.
+     * @param conn the database connection
+     * @param locationID the location ID of the fields to set
+     * @param label the label; null if this field is not changed
+     * @param location the location description; null if this field is
+     *        not changed
+     */
     public void setLocation(Connection conn, int locationID,
 			    String label, String location,
 			    boolean commit)
@@ -3221,6 +3652,23 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add a row to the first-alarm table.
+     * @param conn the database connection
+     * @param userID the ID of the user to which the new row applies
+     * @param ownerID the ID of the owner to which the new row applies
+     * @param locationID the ID of the location to which the new row applies
+     * @param eventTime a possible time for an event
+     * @param weekday true if eventTime refers to a weekday; false for a
+     *        weekend
+     * @param alarmTime the corresponding time for an alarm
+     * @param forEmail true if the alarm applies calendar appointments that
+     *        will be sent to the user's email address; false if no message
+     *        is to be sent
+     * @param forPhone true if the alarm applies calendar appointments that
+     *        will be sent to the user's cell phone; false if no message
+     *        is to be sent
+     */
     public void addFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
 			      Time alarmTime,
@@ -3231,6 +3679,26 @@ public class ECDB implements AutoCloseable {
 		      alarmTime, forEmail, forPhone, true);
     }
 
+    /**
+     * Add a row to the first-alarm table, indicating if the database changes
+     * should be committed.
+     * @param conn the database connection
+     * @param userID the ID of the user to which the new row applies
+     * @param ownerID the ID of the owner to which the new row applies
+     * @param locationID the ID of the location to which the new row applies
+     * @param eventTime a possible time for an event
+     * @param weekday true if eventTime refers to a weekday; false for a
+     *        weekend
+     * @param alarmTime the corresponding time for an alarm
+     * @param forEmail true if the alarm applies calendar appointments that
+     *        will be sent to the user's email address; false if no message
+     *        is to be sent
+     * @param forPhone true if the alarm applies calendar appointments that
+     *        will be sent to the user's cell phone; false if no message
+     *        is to be sent
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
 			      Time alarmTime,
@@ -3274,7 +3742,17 @@ public class ECDB implements AutoCloseable {
 	    if (commit) conn.setAutoCommit(true);
 	}
     }
-			    
+
+    /**
+     * Delete a row from the first-alarm table.
+     * @param conn the database connection
+     * @param userID the ID of the user to which the new row applies
+     * @param ownerID the ID of the owner to which the new row applies
+     * @param locationID the ID of the location to which the new row applies
+     * @param eventTime a possible time for an event
+     * @param weekday true if eventTime refers to a weekday; false for a
+     *        weekend
+     */
     public void deleteFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday)
 	throws SQLException, IllegalArgumentException
@@ -3307,6 +3785,23 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete rows from the first-alarm table.
+     * The rows deleted are those that match the criteria set by the
+     * userID, ownerID, locationID, eventTime, and weekday arguments.
+     * @param conn the database connection
+     * @param userID the ID of the user to which the new row applies; -1
+     *        to match all user IDs
+     * @param ownerID the ID of the owner to which the new row applies; -1
+     *        to match all owner IDs
+     * @param locationID the ID of the location to which the new row applies;
+     *        to match all locations
+     * @param eventTime a possible time for an event; null for any time
+     * @param weekday true if eventTime refers to a weekday; false for a
+     *        weekend; null if not considered; null null for either possibility
+     * @param force true if all entries that match the pattern should be
+     *             automatically deleted; false if the deletion is interactive
+     */
     public void deleteFirstAlarms(Connection conn, int userID, int ownerID,
 				  int locationID, Time eventTime,
 				  Boolean weekday, boolean force)
@@ -3434,6 +3929,12 @@ public class ECDB implements AutoCloseable {
 
     private String ownerLabelSQL = null;
 
+    /**
+     * Get the  owner labeled ID for an owner table entry
+     * @param conn the database connection
+     * @param ownerID the ownerID
+     * @return the matching owner labeled ID; null if there is no match
+     */
     public OwnerLabeledID getOwnerLabeledID(Connection conn, int ownerID)
     {
 	return new OwnerLabeledID(ownerID, getOwnerLabel(conn, ownerID));
@@ -3462,6 +3963,12 @@ public class ECDB implements AutoCloseable {
 
     private String locationLabelSQL = null;
 
+    /**
+     * Get the location labeled ID for an owner table entry
+     * @param conn the database connection
+     * @param locationID the location ID
+     * @return the matching location labeled ID; null if there is no match
+     */
     public LocationLabeledID getLocationLabeledID(Connection conn,
 						  int locationID)
     {
@@ -3702,7 +4209,23 @@ public class ECDB implements AutoCloseable {
 	return null;
     }
 
-
+    /**
+     * List rows from the first alarm table.
+     * The full listing for a row includes the userID, followed by the
+     * location ID, followed by the event time, followed by the weekday
+     * flag, followed by the alarm time, followed by the 'for email' flag,
+     * followed by the 'for phone' flag.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for any owner
+     * @param locationID the location ID; -1 for any location
+     * @param eventTime the time of the event; null for any time
+     * @param weekday true if the event occurs on a weekday; false for
+     *        a weekend; null for either
+     * @param full true if a row contains all of the the publicly
+     *        accessible columns; false if a rows contains only a
+     *        location ID
+     */
     public Vector<Vector<Object>>
 	listFirstAlarms(Connection conn, int userID, int ownerID,
 				  int locationID, Time eventTime,
@@ -3787,6 +4310,21 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * Set fields in a row from the first alarm table.
+     * The fields that can be set are the ones for the alarmTime,
+     * forEmail, and forPhone arguments.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param locationID the location ID
+     * @param eventTime the time of the event
+     * @param weekday true if the event occurs on a weekday; false for
+     *        a weekend
+     * @param alarmTime the alarm time; null to ignore
+     * @param forEmail the 'for email' flag; null to ignore
+     * @param forPhone the 'for phone' flag; null to ignore
+     */
     public void setFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
 			      Time alarmTime,
@@ -3798,6 +4336,24 @@ public class ECDB implements AutoCloseable {
 		      alarmTime, forEmail, forPhone, true);
     }
 
+    /**
+     * Set fields in a row from the first alarm table, indicating if the
+     * database changes should be committed.
+     * The fields that can be set are the ones for the alarmTime,
+     * forEmail, and forPhone arguments.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param locationID the location ID
+     * @param eventTime the time of the event
+     * @param weekday true if the event occurs on a weekday; false for
+     *        a weekend
+     * @param alarmTime the alarm time; null to ignore
+     * @param forEmail the 'for email' flag; null to ignore
+     * @param forPhone the 'for phone' flag; null to ignore
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
 			      Time alarmTime,
@@ -3867,7 +4423,17 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
-
+    /**
+     * Add a row to the second-alarm table.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param locationID the location ID
+     * @param offset the number of minutes before the event for this
+     *        alarm
+     * @param forEmail the 'for email' flag
+     * @param forPhone the 'for phone' flag
+     */
     public void addSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
 			       boolean forEmail, boolean forPhone)
@@ -3877,6 +4443,20 @@ public class ECDB implements AutoCloseable {
 		       forEmail, forPhone, true);
     }
 
+    /**
+     * Add a row to the second-alarm table, indicating if the database changes
+     * should be committed.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param locationID the location ID
+     * @param offset the number of minutes before the event for this
+     *        alarm
+     * @param forEmail the 'for email' flag
+     * @param forPhone the 'for phone' flag
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
 			       boolean forEmail, boolean forPhone,
@@ -3908,7 +4488,14 @@ public class ECDB implements AutoCloseable {
 	    if (commit) conn.setAutoCommit(true);
 	}
     }
-			    
+
+    /**
+     * Delete a row from the second alarm table.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param locationID the location ID
+     */
     public void deleteSecondAlarm(Connection conn, int userID, int ownerID,
 			      int locationID)
 	throws SQLException, IllegalArgumentException
@@ -3936,6 +4523,15 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete rows from the second alarm table.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for any owner
+     * @param locationID the location ID; -1 for any location
+     * @param force true if all entries that match the pattern should be
+     *             automatically deleted; false if the deletion is interactive
+     */
     public void deleteSecondAlarms(Connection conn, int userID, int ownerID,
 				   int locationID, boolean force)
 	throws SQLException, IllegalArgumentException
@@ -4013,6 +4609,20 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+
+    /**
+     * List matching rows from the second-alarm table.
+     * Each row contains the userID, the ownerID, the locationID,
+     * the offset, the 'forEmail' flag, and the 'forPhone' flag
+     * in that order.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for any owner
+     * @param locationID the location ID; -1 for any location
+     * @param full true if the userID, ownerID, and locationID
+     *       are represented by labeled IDs; false if they are
+     *       represented by their integer values
+     */
     public Vector<Vector<Object>>
 	listSecondAlarms(Connection conn, int userID, int ownerID,
 			 int locationID, boolean full)
@@ -4068,6 +4678,19 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * Set fields in the second-alarm table.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for any owner
+     * @param locationID the location ID; -1 for any location
+     * @param offset the difference in minutes between the event and
+     *        the alarm; -1 for no change
+     * @param forEmail true if this alarm appears in a calendar sent to
+     *        an email address; false if it does not; null indicates no change
+     * @param forPhone true if this alarm appears in a calendar sent to
+     *        a cell phone; false if it does not; null indicates no change
+     */
     public void setSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
 			       Boolean forEmail, Boolean forPhone)
@@ -4078,6 +4701,22 @@ public class ECDB implements AutoCloseable {
 		       forEmail, forPhone, true);
     }
 
+    /**
+     * Set fields in the second-alarm table, indicating if the changes should
+     * be committed to a database.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for any owner
+     * @param locationID the location ID; -1 for any location
+     * @param offset the difference in minutes between the event and
+     *        the alarm; -1 for no change
+     * @param forEmail true if this alarm appears in a calendar sent to
+     *        an email address; false if it does not; null indicates no change
+     * @param forPhone true if this alarm appears in a calendar sent to
+     *        a cell phone; false if it does not; null indicates no change
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
 			       Boolean forEmail, Boolean forPhone,
@@ -4143,6 +4782,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add a rew to the pre-event default table.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for any owner
+     * @param peDefault true if the user normally attends pre-events for
+     *        the owner; false otherwise
+     */
     public void addPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault)
 	throws SQLException, IllegalArgumentException
@@ -4150,6 +4797,17 @@ public class ECDB implements AutoCloseable {
 	addPreEventDefault(conn, userID, ownerID, peDefault, true);
     }
 
+    /**
+     * Add a rew to the pre-event default table, indicating if database changes
+     * should be committed.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param peDefault true if the user normally attends pre-events for
+     *        the owner; false otherwise
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault, boolean commit)
     throws SQLException, IllegalArgumentException
@@ -4179,6 +4837,12 @@ public class ECDB implements AutoCloseable {
 	}
     }
 			    
+    /**
+     * Delete a row from the pre-event default table.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     */
     public void deletePreEventDefault(Connection conn, int userID, int ownerID)
 	throws SQLException, IllegalArgumentException
     {
@@ -4204,6 +4868,15 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete rows from the pre-event default table, indicating if the
+     * deletions are interactive.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for all owners
+     * @param force true if all entries that match the pattern should be
+     *             automatically deleted; false if the deletion is interactive
+     */
     public void deletePreEventDefaults(Connection conn, int userID, int ownerID,
 				   boolean force)
 	throws SQLException, IllegalArgumentException
@@ -4273,7 +4946,19 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
-    public Vector<Vector<Object>>
+    /**
+     * List rows from the pre-event default table.
+     * Each row consists of a user ID, followed by an owner ID,
+     * followed by a boolean value indicating fi the pre-event default is
+     * true or false.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID; -1 for all owners
+     * @param full true if the userID, ownerID, and locationID
+     *       are represented by labeled IDs; false if they are
+     *       represented by their integer values
+     */
+   public Vector<Vector<Object>>
 	listPreEventDefaults(Connection conn, int userID, int ownerID,
 			     boolean full)
 	throws SQLException
@@ -4323,6 +5008,17 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * Set the pre-event default field in a row in the pre-event default table.
+     * Each row consists of a user ID, followed by an owner ID,
+     * followed by a boolean value indicating fi the pre-event default is
+     * true or false.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID;
+     * @param peDefault true if the user normally attends pre-events for
+     *        the owner; false otherwise
+     */
     public void setPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault)
 
@@ -4331,6 +5027,20 @@ public class ECDB implements AutoCloseable {
 	setPreEventDefault(conn, userID, ownerID, peDefault, true);
     }
 
+    /**
+     * Set the pre-event default field in a row in the pre-event default table,
+     * indicating if data base changes should be committed.
+     * Each row consists of a user ID, followed by an owner ID,
+     * followed by a boolean value indicating fi the pre-event default is
+     * true or false.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID;
+     * @param peDefault true if the user normally attends pre-events for
+     *        the owner; false otherwise
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault, boolean commit)
 
@@ -4359,6 +5069,13 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /*
+     * Get the pre-event default.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @return true if the prev-event default is true; false otherwise
+     */
     public boolean getPreEventDefault(Connection conn, int userID, int ownerID)
 	throws SQLException, IllegalArgumentException
     {
@@ -4381,12 +5098,32 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add a row to the event table.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param label the event's label
+     * @param description the event's description
+     */
     public void addEvent(Connection conn, int ownerID,
 			    String label, String description)
 	throws SQLException, IllegalArgumentException
     {
 	addEvent(conn, ownerID, label, description, true);
     }
+
+    /**
+     * Add a row to the event table, indicating if database changes should
+     * be committed.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param ownerID the owner ID
+     * @param label the event's label
+     * @param description the event's description
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addEvent(Connection conn, int ownerID,
 			 String label, String description,
 			 boolean commit)
@@ -4428,6 +5165,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 			    
+    /**
+     * Delete a row from the event table.
+     * @param conn the database connection
+     * @param eventID  the event ID for the row
+     */
     public void deleteEvent(Connection conn, int eventID)
 	throws SQLException
     {
@@ -4452,12 +5194,26 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete rows whose labels match a patter from the event table.
+     * @param conn the database connection
+     * @param pattern a pattern for the event's label
+     */
     public void deleteEvent(Connection conn, String pattern)
 	throws SQLException
     {
 	deleteEvent(conn, pattern, false);
     }
 
+    /**
+     * Delete rows whose labels match a patter from the event table,
+     * indicating if the deletion is interactive or if all matching rows
+     * are to be deleted.
+     * @param conn the database connection
+     * @param pattern a pattern for the event's label
+     * @param force true if all entries that match the pattern should be
+     *             automatically deleted; false if the deletion is interactive
+     */
     public void deleteEvent(Connection conn, String pattern, boolean force)
 	throws SQLException
     {
@@ -4520,6 +5276,11 @@ public class ECDB implements AutoCloseable {
     }
 
 
+    /**
+     * Delete rows from the event table.
+     * @param conn the database connection
+     * @param eventIDs  the event IDs that the rows will match
+     */
     public void deleteEvent(Connection conn, int[] eventIDs)
 	throws SQLException
     {
@@ -4546,6 +5307,13 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * List the labels for rows in the event table with specified owners
+     * @param conn the database connection
+     * @param ownerID the owner ID; -1 for all owners
+     * @return an array whose contents are string containing labels, after
+     *         an initial element equal to "[ All ]"
+     */
     public Object[] listEventLabels(Connection conn, int ownerID)
 	throws SQLException
     {
@@ -4568,6 +5336,13 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
+    /**
+     * List the event labeled IDs for rows in the event table with
+     * specified owners
+     * @param conn the database connection
+     * @param ownerID the owner ID; -1 for all owners
+     * @return an array provides the matching event labeled IDs
+     */
     public EventLabeledID[] listEventLabeledIDs(Connection conn, int ownerID)
 	throws SQLException
     {
@@ -4593,6 +5368,17 @@ public class ECDB implements AutoCloseable {
     }
 
 
+    /**
+     * List the rows in the event table matching specified owner IDs.
+     * Each row's entries are in the following order: the event ID,
+     * followed by an owner-labeled ID, followed by a label, followed by a
+     * description.
+     * @param conn the database connection
+     * @param ownerID the owner ID; -1 for all owners
+     * @param full true if full rows are returned; false if each row
+     *        contains only an event ID
+     * @return the table rows matching the specified owners
+     */
     public Vector<Vector<Object>>
 	listEventsForOwner(Connection conn, int ownerID, boolean full)
 	throws SQLException
@@ -4631,6 +5417,17 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List the rows in the event table matching patterns.
+     * Each row's entries are in the following order: the event ID,
+     * followed by an owner-labeled ID, followed by a label, followed by a
+     * description.
+     * @param conn the database connection
+     * @param patterns patterns used to match an owner's label
+     * @param full true if full rows are returned; false if each row
+     *        contains only an event ID
+     * @return the table rows matching the specified patterms
+     */
     public Vector<Vector<Object>>
 	listEvents(Connection conn, String[] patterns, boolean full)
 	throws SQLException
@@ -4714,6 +5511,17 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List the rows in the event table matching event IDs.
+     * Each row's entries are in the following order: the event ID,
+     * followed by an owner-labeled ID, followed by a label, followed by a
+     * description.
+     * @param conn the database connection
+     * @param ids the event IDs to match
+     * @param full true if full rows are returned; false if each row
+     *        contains only an event ID
+     * @return the table rows matching the specified event IDs
+     */
     public Vector<Vector<Object>>
 	listEvents(Connection conn, int[] ids, boolean full)
 	throws SQLException
@@ -4826,6 +5634,14 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Set an event table field.
+     * @param conn the database connection
+     * @param eventID the event ID
+     * @param ownerID the new owner ID; -1 to ignore
+     * @param label the new label; null to ignore
+     * @param description the new description; null to ignore
+     */
     public void setEvent(Connection conn, int eventID, int ownerID,
 			 String label, String description)
 	throws SQLException
@@ -4833,6 +5649,17 @@ public class ECDB implements AutoCloseable {
 	setEvent(conn, eventID, ownerID, label, description, true);
     }
 
+    /**
+     * Set an event table field, indicating if database changes should
+     * be committed.
+     * @param conn the database connection
+     * @param eventID the event ID
+     * @param ownerID the new owner ID; -1 to ignore
+     * @param label the new label; null to ignore
+     * @param description the new description; null to ignore
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setEvent(Connection conn, int eventID, int ownerID,
 			 String label, String description,
 			 boolean commit)
@@ -4896,6 +5723,22 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add a row to the event-instance table.
+     * @param conn the database connection
+     * @param eventID the event ID
+     * @param locationID the location ID
+     * @param preEventType a short description of what a pre-event is; null
+     *        if there is no pre-event
+     * @param preEventOffset the pre-event's offset in minutes from the event
+     *        itself; 0 or negative if there is no pre-event
+     * @param startDate the starting date for this event instance
+     * @param startTime the starting time for this event instance
+     * @param endDate the ending data for this event instance
+     * @param endTime the ending time for this event instance
+     * @param status TENTATIVE, CONFIRMED, CANCELLED or null if a status
+     *        is not explicitly supplied
+     */
     public void addEventInstance(Connection conn,
 				 int eventID,
 				 int locationID,
@@ -4913,6 +5756,25 @@ public class ECDB implements AutoCloseable {
 			 endDate, endTime, status, true);
     }
 
+    /**
+     * Add a row to the event-instance table, indicating if database changes
+     * should be committed.
+     * @param conn the database connection
+     * @param eventID the event ID
+     * @param locationID the location ID
+     * @param preEventType a short description of what a pre-event is; null
+     *        if there is no pre-event
+     * @param preEventOffset the pre-event's offset in minutes from the event
+     *        itself; 0 or negative if there is no pre-event
+     * @param startDate the starting date for this event instance
+     * @param startTime the starting time for this event instance
+     * @param endDate the ending data for this event instance
+     * @param endTime the ending time for this event instance
+     * @param status TENTATIVE, CONFIRMED, CANCELLED or null if a status
+     *        is not explicitly supplied
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addEventInstance(Connection conn,
 				 int eventID,
 				 int locationID,
@@ -4995,7 +5857,12 @@ public class ECDB implements AutoCloseable {
 	    if (commit) conn.setAutoCommit(true);
 	}
     }
-			    
+
+    /**
+     * Delete a row from the event-instance table.
+     * @param conn the database connection
+     * @param instanceID the event-instance ID for the row to delete
+     */
     public boolean deleteEventInstance(Connection conn, int instanceID)
 	throws SQLException
     {
@@ -5022,6 +5889,11 @@ public class ECDB implements AutoCloseable {
 	return (count > 0);
     }
 
+    /**
+     * Delete all rows from the event-instance table whose state is
+     * "CANCELLED".
+     * @param conn the database connection
+     */
     public void deleteCanceledEventInstances(Connection conn)
 	throws SQLException
     {
@@ -5046,6 +5918,11 @@ public class ECDB implements AutoCloseable {
     }
 
 
+    /**
+     * Delete rows from the event-instance table.
+     * @param conn the database connection
+     * @param instanceIDs the event-instance IDs for the rows to delete
+     */
     public int deleteEventInstances(Connection conn, int[] instanceIDs)
 	throws SQLException
     {
@@ -5074,6 +5951,17 @@ public class ECDB implements AutoCloseable {
 	return count;
     }
 
+    /**
+     * List instance labeled IDs for the event-instance table.
+     * Normally either the ownerID or the eventID (or both) will be -1:
+     * an eventID matches only a single ownerID, so providing
+     * both is redundant.
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param eventID an event; -1 for any event
+     * @param locationID an location ID; -1 for any location
+     * @return an array of instance labeled IDs
+     */
     public InstanceLabeledID[] listInstanceLabeledIDs(Connection conn,
 						      int ownerID,
 						      int eventID,
@@ -5083,6 +5971,23 @@ public class ECDB implements AutoCloseable {
 	return listInstanceLabeledIDs(conn, ownerID, eventID, locationID,
 				      false);
     }
+
+    /**
+     * List instance labeled IDs for the event-instance table, optionally
+     * starting with an element matching all event instances.
+     * Normally either the ownerID or the eventID (or both) will be -1:
+     * an eventID matches only a single ownerID, so providing
+     * both is redundant. An instance labeled ID that represents all
+     * event instances has an ID equal to -1 and a label with some
+     * appropraite text ("[ All Instances ]").
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param eventID an event; -1 for any event
+     * @param locationID an location ID; -1 for any location
+     * @param all true if the first instance indicates all instances;
+     *        false otherwise
+     * @return an array of instance labeled IDs
+     */
     public InstanceLabeledID[] listInstanceLabeledIDs(Connection conn,
 						      int ownerID,
 						      int eventID,
@@ -5117,6 +6022,20 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
+    /**
+     * List rows from the event-instance table.
+     * Each row of the table contains the following publiclly readable
+     * fields: an instance ID, an event labeled ID, a location labeled
+     * ID, a pre-event type, a pre-event offset, a start data, a start
+     * time, and end date, and end time, and a status field
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param eventID an event; -1 for any event
+     * @param locationID an location ID; -1 for any location
+     * @param full true if all publicly readable fields are include; false
+     *        if a row contains only the instance ID field
+     * @return a vector of rows
+     */
     public Vector<Vector<Object>>
 	listEventInstances(Connection conn, int ownerID,
 			   int eventID, int locationID,
@@ -5213,6 +6132,24 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List rows from the event-instance table matching additional criteria.
+     * Each row of the table contains the following publiclly readable
+     * fields: an instance ID, an event labeled ID, a location labeled
+     * ID, a pre-event type, a pre-event offset, a start data, a start
+     * time, and end date, and end time, and a status field
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param eventID an event; -1 for any event
+     * @param locationID an location ID; -1 for any location
+     * @param startDate the start date for an event instance; null for any
+     * @param startTime the start time for an event instance; null for any
+     * @param endDate the end date for an event instance; null for any
+     * @param endTime the end time for an event instance; null for any
+     * @param full true if all publicly readable fields are include; false
+     *        if a row contains only the instance ID field
+     * @return a vector of rows
+     */
     public Vector<Vector<Object>>
 	listEventInstances(Connection conn, int ownerID, int locationID,
 			   java.sql.Date startDate, java.sql.Time startTime,
@@ -5329,6 +6266,18 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List rows from the event-instance table for a series of instance IDs.
+     * Each row of the table contains the following publiclly readable
+     * fields: an instance ID, an event labeled ID, a location labeled
+     * ID, a pre-event type, a pre-event offset, a start data, a start
+     * time, and end date, and end time, and a status field
+     * @param conn the database connection
+     * @param ids the instance IDs of the rows to include
+     * @param full true if all publicly readable fields are include; false
+     *        if a row contains only the instance ID field
+     * @return a vector of rows
+     */
     public Vector<Vector<Object>>
 	listEventInstances(Connection conn, int[] ids, boolean full)
 	throws SQLException
@@ -5437,7 +6386,19 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
-    public Vector<Vector<Object>>
+    /**
+     * List rows from the event-instance table for a series of instance IDs.
+     * Each row of the table contains the following publiclly readable
+     * fields: an instance ID, an event labeled ID, a location labeled
+     * ID, a pre-event type, a pre-event offset, a start data, a start
+     * time, and end date, and end time, and a status field
+     * @param conn the database connection
+     * @param id the instance ID the row to include.
+     * @param full true if all publicly readable fields are include; false
+     *        if a row contains only the instance ID field
+     * @return a vector of rows
+     */
+   public Vector<Vector<Object>>
 	listEventInstance(Connection conn, int instanceID, boolean full)
 	throws SQLException, IllegalArgumentException
     {
@@ -5505,6 +6466,16 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * Find and instance ID  given an event, location, start date, and start
+     * time.
+     * @param conn the database connection
+     * @param eventID an event; -1 for any event
+     * @param locationID an location ID; -1 for any location
+     * @param startDate the start date for an event instance; null for any
+     * @param startTime the start time for an event instance; null for any
+     * @return and instance ID; -1 if there is no match
+     */
     int findEventInstance(Connection conn, int eventID, int locationID,
 			   java.sql.Date startDate, java.sql.Time startTime)
 	throws SQLException
@@ -5574,6 +6545,19 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Set fields in a row of the event table.
+     * @param conn the database connection
+     * @param instanceID an instance ID for the row to modified
+     * @param eventID an event; -1 if ignored
+     * @param locationID an location ID; -1 if ignored
+     * @param preEventType a descriptive type for a pre-event; null if ignored
+     * @param preEventOffset the pre-event offset in minutes; -1 if ignored
+     * @param startDate the start date for an event instance; null if ignored
+     * @param startTime the start time for an event instance; null if ignored
+     * @param endDate the end date for an event instance; null if ignored
+     * @param endTime the end time for an event instance; null if ignored
+     */
     public void setEventInstance(Connection conn, int instanceID,
 				 int eventID, int locationID,
 				 String preEventType,
@@ -5591,6 +6575,22 @@ public class ECDB implements AutoCloseable {
 			 true);
     }
 
+    /**
+     * Set fields in a row of the event table, indicating if database
+     * changes should be committed.
+     * @param conn the database connection
+     * @param instanceID an instance ID for the row to modified
+     * @param eventID an event; -1 if ignored
+     * @param locationID an location ID; -1 if ignored
+     * @param preEventType a descriptive type for a pre-event; null if ignored
+     * @param preEventOffset the pre-event offset in minutes; -1 if ignored
+     * @param startDate the start date for an event instance; null if ignored
+     * @param startTime the start time for an event instance; null if ignored
+     * @param endDate the end date for an event instance; null if ignored
+     * @param endTime the end time for an event instance; null if ignored
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setEventInstance(Connection conn, int instanceID,
 				 int eventID, int locationID,
 				 String preEventType,
@@ -5734,12 +6734,27 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add a series to the series table.
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param label a short string naming the series
+     */
     public void addSeries(Connection conn, int ownerID, String label)
 	throws SQLException, IllegalArgumentException
     {
 	addSeries(conn, ownerID, label, true);
     }
 
+    /**
+     * Add a series to the series table, indicating if database changes should
+     * be committed.
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param label a short string naming the series
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addSeries(Connection conn, int ownerID, String label,
 			  boolean commit)
 	throws SQLException, IllegalArgumentException
@@ -5775,6 +6790,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 			    
+    /**
+     * Delete a series from the series table.
+     * @param conn the database connection
+     * @param seriesID the series ID
+     */
     public void deleteSeries(Connection conn, int seriesID)
 	throws SQLException
     {
@@ -5799,12 +6819,29 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete a series from the series table.
+     * If there are multiple matches, the deletion will be interactive.
+     * @param conn the database connection
+     * @param ownerID  an ownerID used to search for a series
+     * @param pattern a pattern used to match the label for the series
+     */
     public void deleteSeries(Connection conn, int ownerID, String pattern)
 	throws SQLException
     {
 	deleteSeries(conn, ownerID, pattern, false);
     }
 
+    /**
+     * Delete a series from the series table, indicating if the deletions
+     * are interactive.
+     * @param conn the database connection
+     * @param ownerID  an ownerID used to search for a series; -1 for any
+     * @param pattern a pattern used to match the label for the series; null
+     *        for any label
+     * @param force true if all entries that match the pattern should be
+     *             automatically deleted; false if the deletion is interactive
+     */
     public void deleteSeries(Connection conn, int ownerID, String pattern,
 			     boolean force)
 	throws SQLException
@@ -5888,6 +6925,12 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Delete a series from the series table.
+     * @param conn the database connection
+     * @param ownerIDs a list of owner IDs for those series that
+     *        should be deleted
+     */
     public void deleteSeries(Connection conn, int[] ownerIDs)
 	throws SQLException
     {
@@ -5914,6 +6957,12 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     *  List the labels for a series.
+     * @param conn the database connection
+     * @param ownerID the ownerID for the series that should be listed; -1
+     *        for any owner
+     */
     public Object[] listSeriesLabels(Connection conn, int ownerID)
 	throws SQLException
     {
@@ -5938,6 +6987,12 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
+    /**
+     *  List the series label IDs for a series.
+     * @param conn the database connection
+     * @param ownerID the ownerID for the series that should be listed; -1
+     *        for any owner
+     */
     public SeriesLabeledID[] listSeriesLabeledIDs(Connection conn, int ownerID)
 	throws SQLException
     {
@@ -5963,7 +7018,19 @@ public class ECDB implements AutoCloseable {
 	return results;
     }
 
-
+    /**
+     * List rows from the series table.
+     * A row may contain the following fields: a series ID, followed by
+     * an owner ID, followed by a label.
+     * @param conn the database connection
+     * @param ownerID the ownerID for the series that should be listed; -1
+     *        for any owner
+     * @param pattern a pattern used to match the label for the series; null
+     *        for any label
+     * @param full true if all publicly readable fields are include; false
+     *        if a row contains only the instance ID field
+     * @return selected rows from the series table
+     */
     public Vector<Vector<Object>>
 	listSeries(Connection conn, int ownerID, String pattern, boolean full)
 	throws SQLException
@@ -6032,7 +7099,15 @@ public class ECDB implements AutoCloseable {
 	}
 	return vector;
     }
-
+    /**
+     * Get the series labeled ID for an entry in the series table.
+     * @param conn the database connection
+     * @param seriesID the series ID
+     * @param withOwner true if the owner label should be inlcuded in
+     *        the labeled ID; false if just the series label should be
+     *        included
+     * @return a series labeled ID for the specified series ID
+     */
     public SeriesLabeledID getSeriesLabeledID(Connection conn, int seriesID,
 					      boolean withOwner)
 	throws SQLException
@@ -6067,6 +7142,13 @@ public class ECDB implements AutoCloseable {
 	return null;
     }
 
+    /** List rows in the series table that match specific series IDs.
+     * @param conn the database connection
+     * @param seriesID the series ID
+     * @param full true if all publicly readable fields are include; false
+     *        if a row contains only the instance ID field
+     * @return a series labeled ID for the specified series ID
+     */
     public Vector<Vector<Object>>
 	listSeries(Connection conn, int[] ids, boolean full)
 	throws SQLException
@@ -6133,6 +7215,14 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
   
+    /** List rows in the series table that match a specific series ID, or
+     *  optionally all series IDs.
+     * @param conn the database connection
+     * @param seriesID the series ID; -1 for all series IDs
+     * @param full true if all publicly readable fields are include; false
+     *        if a row contains only the instance ID field
+     * @return rows that match the specified series IDs
+     */
     public Vector<Vector<Object>>
 	listSeries(Connection conn, int seriesID, boolean full)
 	throws SQLException
@@ -6196,7 +7286,14 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
   
-  
+    /**
+     * Find a series ID given an owner ID and a pattern used to match labels.
+     * @param conn the database connection
+     * @param ownerID the ownerID for the series that should be listed; -1
+     *        if ignored
+     * @param pattern a pattern used to match labels
+     * @return the series ID; -1 if there was not a match
+     */
     public int findSeries(Connection conn, int ownerID, String pattern)
 	throws SQLException, IllegalArgumentException
     {
@@ -6247,6 +7344,13 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Set fields for a row in the series table.
+     * @param conn the database connection
+     * @param seriesID the series ID for the row
+     * @param ownerID the new ownerID; -1 if ignored
+     * @param label the new label; null if ignored
+     */
     public void setSeries(Connection conn, int seriesID,
 			  int ownerID, String label)
 	throws SQLException
@@ -6254,6 +7358,16 @@ public class ECDB implements AutoCloseable {
 	setSeries(conn, seriesID, ownerID, label, true);
     }
 
+    /**
+     * Set fields for a row in the series table, optionally committing
+     * database changes.
+     * @param conn the database connection
+     * @param seriesID the series ID for the row
+     * @param ownerID the new ownerID; -1 if ignored
+     * @param label the new label; null if ignored
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setSeries(Connection conn, int seriesID,
 			  int ownerID, String label, boolean commit)
 	throws SQLException
@@ -6311,12 +7425,27 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Add a row to the series-instance table.
+     * @param conn the database connection
+     * @param seriesID the series ID for the new row
+     * @param instanceID the instanceID for the new row
+     */
     public void addSeriesInstance(Connection conn, int seriesID, int instanceID)
 	throws SQLException, IllegalArgumentException
     {
 	addSeriesInstance(conn, seriesID, instanceID, true);
     }
 
+    /**
+     * Add a row to the series-instance table, indicating if database changes
+     * should be committed..
+     * @param conn the database connection
+     * @param seriesID the series ID for the new row
+     * @param instanceID the instanceID for the new row
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addSeriesInstance(Connection conn, int seriesID, int instanceID,
 				  boolean commit)
 	throws SQLException, IllegalArgumentException
@@ -6352,6 +7481,12 @@ public class ECDB implements AutoCloseable {
     }
 			    
 
+    /**
+     * Delete rows from the series-instance table.
+     * @param conn the database connection
+     * @param seriesID the series ID for the row; -1 for any
+     * @param instanceID the instanceID for the row; -1 for any
+     */
     public void deleteSeriesInstance(Connection conn, int seriesID,
 				     int instanceID)
 	throws SQLException
@@ -6359,6 +7494,15 @@ public class ECDB implements AutoCloseable {
 	deleteSeriesInstance(conn, seriesID, instanceID, false);
     }
 
+    /**
+     * Delete rows from the series-instance table, indicating if multiple
+     * deletions should be done interactively.
+     * @param conn the database connection
+     * @param seriesID the series ID for the row; -1 for any
+     * @param instanceID the instanceID for the row; -1 for any
+     * @param force true if all entries that match the pattern should be
+     *             automatically deleted; false if the deletion is interactive
+     */
     public void deleteSeriesInstance(Connection conn, int seriesID,
 				     int instanceID, boolean force)
 	throws SQLException
@@ -6438,7 +7582,17 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
-
+    /**
+     * List rows from the series-instance table.
+     * Each row in the table contains a series ID followed by am
+     * instance ID.
+     * @param conn the database connection
+     * @param seriesID the series ID for a row; -1 if ignored
+     * @param instanceID the instanceID for a row; -1 if ignored
+     * @param full true if the IDs are returned as labeled ids; false
+     *        if returned as integers
+     * @return a table of rows
+     */
     public Vector<Vector<Object>>
 	listSeriesInstance(Connection conn, int seriesID, int instanceID,
 			   boolean full)
@@ -6494,6 +7648,17 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * List rows from the series-instance table by owner.
+     * Each row in the table contains a series ID followed by am
+     * instance ID.
+     * @param conn the database connection
+     * @param seriesID the series ID for a row; -1 if ignored
+     * @param ownerID the owner id for a row; -1 if ignored
+     * @param full true if the IDs are returned as labeled ids; false
+     *        if returned as integers
+     * @return a table of rows
+     */
     public Vector<Vector<Object>>
 	listSeriesInstanceByOwner(Connection conn, int seriesID, int ownerID,
 			   boolean full)
@@ -6546,7 +7711,15 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
-
+    /**
+     * Add a row to the attendee table.
+     * @param conn the database connection
+     * @param userID the userID for the new row
+     * @param instanceID the instance ID for the new
+     * @param attendingPreEvent true if the user will attend any pre-event
+     *        for the instance; false otherwise
+     * @param seriesID the ID; -1 if there is none for the new row
+     */
     public void addAttendee(Connection conn, int userID, int instanceID,
 			    boolean attendingPreEvent, int seriesID)
 	throws SQLException, IllegalArgumentException
@@ -6556,6 +7729,18 @@ public class ECDB implements AutoCloseable {
     }
 
 
+    /**
+     * Add a row to the attendee table, indicating if database changes
+     * should be commmitted.
+     * @param conn the database connection
+     * @param userID the userID for the new row
+     * @param instanceID the instance ID for the new
+     * @param attendingPreEvent true if the user will attend any pre-event
+     *        for the instance; false otherwise
+     * @param seriesID the ID; -1 if there is none for the new row
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void addAttendee(Connection conn, int userID, int instanceID,
 			    boolean attendingPreEvent, int seriesID,
 			    boolean commit)
@@ -6596,7 +7781,19 @@ public class ECDB implements AutoCloseable {
 	    if (commit) conn.setAutoCommit(true);
 	}
     }
-			    
+
+    /**
+     * Delete one or more rows from the attendee table.
+     * @param conn the database connection
+     * @param userID the userID for a row; -1 for any
+     * @param instanceID the instance ID for a row; -1 for any
+     * @param attendeeState the state of an attendee (ACTIVE,
+     *        CANCELLING, or CANCELLED) with null implying CANCELLED.
+     * @param seriesID the ID; -1 for any
+     * @param force true if all entries that match should be
+     *        automatically deleted; false if the deletion is interactive
+     *        when more than one rows were selected
+     */
     public void deleteAttendee(Connection conn, int userID,
 			       int instanceID,
 			       String attendeeState,
@@ -6699,7 +7896,20 @@ public class ECDB implements AutoCloseable {
 	    conn.setAutoCommit(true);
 	}
     }
-
+    /**
+     * List attendees
+     * The fields listed are in the following order: userID,
+     * instanceID, attendeeState, attendingPreEvent, and seriesID
+     * @param conn the database connection
+     * @param userID the userID for a row; -1 for any
+     * @param instanceID the instance ID for a row; -1 for any
+     * @param seriesID the ID; -1 for any
+     * @param attendeeState the state of an attendee (ACTIVE,
+     *        CANCELLING, or CANCELLED) with null implying CANCELLED.
+     * @param full true if integer values are represented as labeled ids
+     *        and the attendeeState as an enum; false if the values are
+     *        integers and strings .
+     */
     public Vector<Vector<Object>>
 	listAttendees(Connection conn, int userID, int instanceID,
 		      int seriesID, String attendeeState,
@@ -6779,6 +7989,15 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * Set fields in a row of the attendee table.
+     * @param conn the database connection
+     * @param userID the userID for a row
+     * @param instanceID the instance ID for a row
+     * @param seriesID the new series ID; -1 to ignore
+     * @param attendeeState the new state of an attendee (ACTIVE,
+     *        CANCELLING, or CANCELLED); null to ignore.
+     */
     public void setAttendee(Connection conn, int userID, int instanceID,
 			    String attendeeState, int seriesID)
 	throws SQLException, IllegalArgumentException
@@ -6786,6 +8005,18 @@ public class ECDB implements AutoCloseable {
 	setAttendee(conn, userID, instanceID, attendeeState, seriesID, true);
     }
 
+    /**
+     * Set fields in a row of the attendee table.
+     * This method can change the attendeeState or the seriesID fields.
+     * @param conn the database connection
+     * @param userID the userID for a row
+     * @param instanceID the instance ID for a row
+     * @param seriesID the new series ID; -1 to ignore
+     * @param attendeeState the new state of an attendee (ACTIVE,
+     *        CANCELLING, or CANCELLED); null to ignore.
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void setAttendee(Connection conn, int userID, int instanceID,
 			    String attendeeState, int seriesID,
 			    boolean commit)
@@ -6880,7 +8111,15 @@ public class ECDB implements AutoCloseable {
 
     static final int SECOND_PER_DAY = 3600*24;
 
-    static class  UserCalendars {
+    /**
+     * Calendar data.
+     * This class is used to collect calendars and
+     * associated data.  Each instance of this class is
+     * associated with a single user ID and a boolean value
+     * indicating whether or not the calendars are for use with
+     * email or text messages.
+     */
+    public static class  UserCalendars {
 	int userID;
 	boolean forEmail;
 	TemplateProcessor.KeyMap kmap = null;
@@ -6888,6 +8127,20 @@ public class ECDB implements AutoCloseable {
 	// Vector<CalData> dvector = new Vector<>(32);
     }
 
+    /**
+     * Count the number of rows in the attendee with an instance id
+     * that matches and event instance with a specified location ane
+     * event ID, where the corresponding event has a specified owner.
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param eventID an event; -1 for any event
+     * @param locationID an location ID; -1 for any location
+     * @param instanceID an instance ID; -1 for any instance
+     * @return the number of rows in the attendee with an instance id
+     *         that matches and event instance with a specified
+     *         location ane event ID, where the corresponding event
+     *         has a specified owner
+     */
     public int getInstanceCount(Connection conn, int ownerID, int eventID,
 				int locationID, int instanceID)
 	throws SQLException
@@ -6954,7 +8207,20 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
-
+    /**
+     * Get a list of UserCalendar objects, each associated with a
+     * distinct user ID for users not attending a specified set of
+     * event instances. The userCalendar objects returned do not
+     * contain calendars.
+     * @param conn the database connection
+     * @param ownerID an owner ID; -1 for any owner
+     * @param eventID an event; -1 for any event
+     * @param locationID an location ID; -1 for any location
+     * @param instanceID an instance ID; -1 for any instance
+     * @param forEmail true for calendars associated with email;
+     *        false for text messages
+     * @return the UserCalendar objects
+     */
     public Vector<UserCalendars>
 	getNonAttendees(Connection conn, int ownerID, int eventID,
 			int locationID, int instanceID, boolean forEmail)
@@ -7033,6 +8299,19 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * Get a list of UserCalendar objects, each associated with a
+     * distinct user ID for users attending a specified set of
+     * event instances. The corresponding calendars are included
+     * inthe UserCalendar objects.
+     * @param conn the database connection
+     * @param userID the userID; -1 for any user
+     * @param ownerID an owner ID; -1 for any owner
+     * @param eventID an event; -1 for any event
+     * @param calendarForEmail true for calendars associated with email;
+     *        false for text messages
+     * @return the UserCalendar objects
+     */
     public Vector<UserCalendars>
 	getCalendars(Connection conn, int userID, int ownerID, int eventID,
 		     boolean calendarForEmail)
@@ -7592,11 +8871,26 @@ public class ECDB implements AutoCloseable {
 	return vector;
     }
 
+    /**
+     * Apply a series to a user
+     * @param conn the database connection
+     * @param userID the userID
+     * @param seriesID the series ID
+     */
     public void applySeries(Connection conn, int userID, int seriesID)
 	throws SQLException, IllegalArgumentException
     {
 	applySeries(conn, userID, seriesID, true);
     }
+    /**
+     * Apply a series to a user, indicating if database changes should be
+     * committed.
+     * @param conn the database connection
+     * @param userID the userID
+     * @param seriesID the series ID
+     * @param commit true if the new changes should be committed; false
+     *        otherwise
+     */
     public void applySeries(Connection conn, int userID, int seriesID,
 			    boolean commit)
 	throws SQLException, IllegalArgumentException
@@ -7638,51 +8932,151 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * User status.
+     * Provided as a type-safe alternative to string values in the
+     * databasse.
+     */
     public static enum UserStatus {
+	/**
+	 * The user is active.
+	 */
 	ACTIVE,
+	/**
+	 * The user is not active.
+	 */
 	NOTACTIVE,
+	/**
+	 * The user has been cancelled.
+	 * This option is provided so that the user ID
+	 * can be reused. Alternatively a clean-up process
+	 * can delete these entries from the user table.
+	 */
 	CANCELLED
     }
 
+    /**
+     * Calendar status.
+     * Provided as a type-safe alternative to string values in the
+     * database.  The values match those provided in RFC 5545.
+     */
     public static enum CalendarStatus {
+	/**
+	 * An appointment status is 'tentative'.
+	 */
 	TENTATIVE,
+	/**
+	 * An appointment status is 'confirmed'.
+	 */
 	CONFIRMED,
+	/**
+	 * An appointment status is 'cancelled'.
+	 */
 	CANCELLED
     }
 
+    /**
+     * Attendee state.
+     * Provided as a type-safe alternative to string values in the
+     * databasse.
+     */
     public static enum AttendeeState {
+	/**
+	 * An entry in the attendee table is an active entry.
+	 */
 	ACTIVE,
+	/**
+	 * An entry in the attendee table is in the process of being
+	 * cancelled.
+	 */
 	CANCELLING,
+	/**
+	 * An entry in the attendee table has ben cancelled. It may
+	 * be subsequently deleted.
+	 */
 	CANCELLED
     }
 
+    /**
+     * Table type.
+     */
     public static enum Table {
+	/**
+	 * This constant indicates the carrier table.
+	 */
 	CARRIER,
+	/**
+	 * This constant indicates the carrier-map table.
+	 */
 	CARRIER_MAP,
+	/**
+	 * This constant indicates the user table.
+	 */
 	USER,
+	/**
+	 * This constant indicates the owner table.
+	 */
 	OWNER,
+	/**
+	 * This constant indicates the pre-event-default table.
+	 */
 	PRE_EVENT_DEFAULT,
+	/**
+	 * This constant indicates the location table.
+	 */
 	LOCATION,
+	/**
+	 * This constant indicates the first-alarm table.
+	 */
 	FIRST_ALARM,
+	/**
+	 * This constant indicates the second-alarm table.
+	 */
 	SECOND_ALARM,
+	/**
+	 * This constant indicates the event table.
+	 */
 	EVENT,
+	/**
+	 * This constant indicates the event-instance table.
+	 */
 	INSTANCE,
+	/**
+	 * This constant indicates the series table.
+	 */
 	SERIES,
+	/**
+	 * This constant indicates the series-instance table.
+	 */
 	SERIES_INSTANCE,
+	/**
+	 * This constant indicates the attendee table.
+	 */
 	ATTENDEE
     }
 
+    /**
+     * Base class for labeled IDs
+     * This class represents a binding between an integer ID and
+     * a string labeling that ID.
+     */
     public static class LabeledID {
 	int id;
 	String label;
 	// Table type;
 
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public LabeledID(int id, String label/*, Table type*/) {
 	    this.id = id;
 	    this.label = label.trim();
 	    // this.type = type;
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 	    if (obj instanceof LabeledID && getClass().equals(obj.getClass())) {
 		LabeledID other = (LabeledID) obj;
@@ -7693,61 +9087,137 @@ public class ECDB implements AutoCloseable {
 	}
 
 
+	/**
+	 * Get a string representation for this object
+	 * showing only the label.
+	 * @return the label
+	 */
+	@Override
 	public String toString() {
 	    return label;
 	}
 
 
+	/**
+	 * Get a string representation for thi object showing both
+	 * a label and an integer ID.
+	 * @return the string representation
+	 */
 	public String toFullString() {
 	    return String.format("%d (%s)", id, label);
 	}
 
+	/**
+	 * Get the ID for this object.
+	 * @return the ID
+	 */
 	public int getID() {return id;}
 
+	/**
+	 * Get the label for this object.
+	 * @return the label
+	 */
 	public String getLabel() {return label;}
 
 	// public Table getType() {return type;}
     }
 
+    /**
+     * LabeledID class representing a carrier.
+     */
     public static class CarrierLabeledID extends LabeledID {
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public CarrierLabeledID(int id, String label) {
 	    super(id, label);
 	}
     }
 
+
+    /**
+     * LabeledID class representing a user.
+     */
     public static class UserLabeledID extends LabeledID {
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public UserLabeledID(int id, String label) {
 	    super(id, label);
 	}
     }
 
 
+    /**
+     * LabeledID class representing an owner.
+     */
     public static class OwnerLabeledID extends LabeledID {
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public OwnerLabeledID(int id, String label) {
 	    super(id, label);
 	}
     }
 
+    /**
+     * LabeledID class representing a location.
+     */
     public static class LocationLabeledID extends LabeledID {
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public LocationLabeledID(int id, String label) {
 	    super(id, label);
 	}
     }
 
+    /**
+     * LabeledID class representing an event.
+     */
     public static class EventLabeledID extends LabeledID {
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public EventLabeledID(int id, String label) {
 	    super(id, label);
 	}
     }
 
+    /**
+     * LabeledID class representing an event instance.
+     */
     public static class InstanceLabeledID extends LabeledID {
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public InstanceLabeledID(int id, String label) {
 	    super(id, label);
 	}
     }
 
 
+    /**
+     * LabeledID class representing a series.
+     */
     public static class SeriesLabeledID extends LabeledID {
+	/**
+	 * Constructor.
+	 * @param id the ID
+	 * @param label the label
+	 */
 	public SeriesLabeledID(int id, String label) {
 	    super(id, label);
 	}
@@ -7964,6 +9434,13 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Copy a series of calendars to the window-system's clipboard.
+     * @param calendars the calendars
+     * @param headless true if ECDB is being run from the command line
+     *        and will not open any windows, even if a window system is
+     *        present
+     */
     public static void copyToClipboard(Vector<byte[]> calendars,
 				       boolean headless)
 	throws IOException
@@ -7978,6 +9455,11 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Copy a series of calendars to a directory.
+     * @param dir the directory
+     * @param calendars the calendars
+     */
     public static void saveToDirectory(File dir, Vector<byte[]> calendars)
 	throws IOException
     {
@@ -8007,32 +9489,79 @@ public class ECDB implements AutoCloseable {
     private URL altTemplateURL = null;
     private Boolean preflight = null;
 
+    /**
+     * Set the subject for a message (email or SMS via a gateway).
+     * @param subject the subject line
+     */
     public void setSubject(String subject) {this.subject = subject;}
 
+    /**
+     * Get the current subject line.
+     * @return the subject line
+     */
     public String getSubject() {return subject;}
 
+    /**
+     * Set the media type for a message (email or SMS via a gateway).
+     * @param mediaType the media type (e.g., text/html)
+     */
     public void setMediaType(String mediaType) {this.mediaType = mediaType;}
 
+    /**
+     * Get the media type for a message.
+     * @return the media type (e.g., text/html)
+     */
     public String getMediaType() {return mediaType;}
 
+    /**
+     * Set the alternative media type for a message (email or SMS via
+     * a gateway).
+     * @param mediaType the media type (e.g., text/plain)
+     */
     public void setAltMediaType(String mediaType) {
 	this.altMediaType = mediaType;
     }
 
+    /**
+     * Get the alternative media type for a message.
+     * @return the media type (e.g., text/plain)
+     */
     public String getAltMediaType() {return altMediaType;}
 
+
+    /**
+     * Set the URL for the message template.
+     * @URL the url
+     */
     public void setTemplateURL(URL templateURL) {
 	this.templateURL = templateURL;
     }
 
+    /**
+     * Get the URL for the message template.
+     * @return the url
+     */
     public URL getTemplateURL() {return templateURL;}
 
+    /**
+     * Set the URL for the alternative message template.
+     * @URL the url
+     */
     public void setAltTemplateURL(URL templateURL) {
 	this.altTemplateURL = templateURL;
     }
 
+    /**
+     * Get the URL for the alternative message template.
+     * @return the url
+     */
     public URL getAltTemplateURL() {return altTemplateURL;}
 
+    /**
+     * Get the preflight mode.
+     * @return true if the messages should be previewed before being
+     *         sent; false otherwise
+     */
     public boolean getPreflight() {
 	if (preflight == null) {
 	    String pre = dbProperties.getProperty("preflight", "false");
@@ -8048,10 +9577,32 @@ public class ECDB implements AutoCloseable {
 	return preflight;
     }
 
+    /**
+     * Set the preflight mode.
+     * @param value  true if the messages should be previewed before being
+     *        sent; false otherwise
+     */
     public void setPreflight(boolean value) {
 	preflight = value;
     }
 
+    /**
+     * Send a calendar appointment or message via email, either to
+     * an email address. For SMS, the recipient address is that for a
+     * gateway.
+     * @param ecdb the instance of ECDB to use.
+     * @param conn a database connection obtained from ecdb
+     * @param vector a vector of UserCalendar objects, each
+     *        containing calendars and data needed to identify
+     *        recipients and format messages
+     * @param suppressCalendars true if calendars should not be attached
+     *        to a message; false otherwise
+     * @param frame a JFrame on which any dialog boxes should be centered;
+     *        null if there are none
+     * @param preflight true if the user should be shown a representation of
+     *        the messages in a web browser (e.g., to verify that the
+     *        messages are formated or created as desired); false otherwise
+     */
     public static boolean sendViaEmail(ECDB ecdb, Connection conn,
 				       Vector<UserCalendars> vector,
 				       boolean suppressCalendars,
@@ -8139,6 +9690,23 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Send a calendar appointment or message via email, either to
+     * an email address. For SMS, the recipient address is that for a
+     * gateway.
+     * @param ecdb the instance of ECDB to use.
+     * @param conn a database connection obtained from ecdb
+     * @param out the print stream on which the message will be
+     *        displayed
+     * @param vector a vector of UserCalendar objects, each
+     *        containing calendars and data needed to identify
+     *        recipients and format messages
+     * @param forEmail true if the message should be formatted as an
+     *        email messages; false if it should be formatted as an SMS
+     *        message
+     * @param suppressCalendars true if calendars should not be attached
+     *        to a message; false otherwise
+     */
     public static void dryrunForSend(ECDB ecdb, Connection conn,
 				     PrintWriter out,
 				     Vector<UserCalendars> vector,
@@ -8203,6 +9771,10 @@ public class ECDB implements AutoCloseable {
 	}
     }
 
+    /**
+     * Main program for ECDB when used as an application instead of purely
+     * as part of a class library.
+     */
     public static void main(String argv[]) {
 	int ind = 0;
 

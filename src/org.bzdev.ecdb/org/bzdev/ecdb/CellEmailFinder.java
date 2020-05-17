@@ -4,6 +4,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ServiceLoader;
 
+/**
+ * Base class for finding the email address to use for an SMS gateway
+ * for a cell phone number.
+ */
 public abstract class CellEmailFinder {
 
     static ServiceLoader<CellEmailFinderSPI> providers =

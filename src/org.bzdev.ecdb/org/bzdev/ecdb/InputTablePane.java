@@ -9,6 +9,9 @@ import javax.swing.event.*;
 import javax.swing.filechooser.*;
 import javax.swing.table.*;
 
+/**
+ * Table pane for inputing data.
+ */
 public class InputTablePane extends JPanel {
 
     private static int configColumn(JTable table, int col,
@@ -35,6 +38,9 @@ public class InputTablePane extends JPanel {
 	return w;
     }
 
+    /**
+     * Specification for a table column.
+     */
     public static class ColSpec {
 	String heading;
 	String example;
@@ -42,6 +48,16 @@ public class InputTablePane extends JPanel {
 	TableCellRenderer tcr;
 	TableCellEditor tce;
 
+	/**
+	 * Constructor.
+	 * @param heading the table heading
+	 * @param example, sample text to compute the column width
+	 * @param clasz the class for the data in this column
+	 * @param tcr the table-cell renderer used to render a cell in the
+	 *        column
+	 * @param tce the table-cell editor used to edit a cell in the table;
+	 *        null if the column is not editable
+	 */
 	public ColSpec(String heading, String example, Class<?> clasz,
 		       TableCellRenderer tcr, TableCellEditor tce)
 	{
@@ -54,12 +70,36 @@ public class InputTablePane extends JPanel {
     }
     private DefaultTableModel tm;
 
+    /**
+     * Constructor.
+     * @param colspec an array (one entry per column in column  order)
+     *        specifying a column
+     * @param nrows the number of rows
+     * @param canAdd true if rows can be added to the table; false otherwise
+     * @param canDel true if rows can be deleted from the table;
+     *        false otherwise
+     * @param canMove true if rows can be moved up or down in the table;
+     *        false otherwise
+     */
     public InputTablePane(ColSpec[] colspec, int nrows,
 			  boolean canAdd, boolean canDel, boolean canMove)
     {
 	this(colspec, nrows, null, canAdd, canDel, canMove);
     }
 
+    /**
+     * Constructor based on explicitly provided rows.
+     * @param colspec an array (one entry per column in column  order)
+     *        specifying a column
+     * @param rows the table's rows as a Vector  of rows, where each row
+     *        contains a vector whose elements fit the specification provided
+     *        by the first argument (colspec)
+     * @param canAdd true if rows can be added to the table; false otherwise
+     * @param canDel true if rows can be deleted from the table;
+     *        false otherwise
+     * @param canMove true if rows can be moved up or down in the table;
+     *        false otherwise
+     */
     public InputTablePane(ColSpec[] colspec, Vector<Vector<Object>>rows,
 			  boolean canAdd, boolean canDel, boolean canMove)
     {
@@ -68,6 +108,21 @@ public class InputTablePane extends JPanel {
 
     private JTable table;
 
+    /**
+     * Constructor with explicitly provided rows, possibly followed by
+     * blank rows.
+     * @param colspec an array (one entry per column in column  order)
+     *        specifying a column
+     * @param initialRows the table's initial rows as a Vector of rows,
+     *         where each row contains a vector whose elements fit the
+     *        specification provided by the first argument (colspec)
+     * @param nrows the number of rows
+     * @param canAdd true if rows can be added to the table; false otherwise
+     * @param canDel true if rows can be deleted from the table;
+     *        false otherwise
+     * @param canMove true if rows can be moved up or down in the table;
+     *        false otherwise
+     */
     public InputTablePane(ColSpec[] colspec, int nrows,
 			  Vector<Vector<Object>> initialRows,
 			  boolean canAdd, boolean canDel, boolean canMove)
@@ -247,14 +302,31 @@ public class InputTablePane extends JPanel {
 	add(topPanel, BorderLayout.NORTH);
     }
 
+    /**
+     * Get the number of rows in the table.
+     * @return the number of rows
+     */
     public int getRowCount() {return tm.getRowCount();}
 
+    /**
+     * Get the number of columns in the table.
+     * @return the number of tables.
+     */
     public int getColumnCount() {return tm.getColumnCount();}
 
+    /**
+     * Get the value of a table cell for this table.
+     * @param rowIndex the row index (starting at 0)
+     * @param columnIndex the column index (starting at 0)
+     * @return the value for the specified row and column
+     */
     public Object getValueAt(int rowIndex, int columnIndex) {
 	return tm.getValueAt(rowIndex, columnIndex);
     }
     
+    /**
+     * Stop editing a cell.
+     */
     public void stopCellEditing() {
 	CellEditor ce = table.getCellEditor();
 	if (ce != null) {
@@ -262,6 +334,18 @@ public class InputTablePane extends JPanel {
 	}
     }
 
+    /**
+     * Create a new InputTablePane inside a dialog.
+     * @param parent the component on which to center the dialog
+     * @param title the title of the dialog
+     * @param colspec the column specification for the table
+     * @param nrows the number of rows in the table
+     * @param canAdd true if rows can be added to the table; false otherwise
+     * @param canDel true if rows can be deleted from the table;
+     *        false otherwise
+     * @param canMove true if rows can be moved up or down in the table;
+     *        false otherwise
+     */
     public static InputTablePane
 	showDialog(Component parent, String title,
 		   ColSpec[] colspec, int nrows,
@@ -271,6 +355,20 @@ public class InputTablePane extends JPanel {
 			  canAdd, canDel, canMove);
     }
 
+    /**
+     * Create a new InputTablePane, initializing some rows, placing
+     * the table inside a dialog.
+     * @param parent the component on which to center the dialog
+     * @param title the title of the dialog
+     * @param colspec the column specification for the table
+     * @param initialRows the rows to initially add to the table,
+     *        which determines the initial number of rows in the table.
+     * @param canAdd true if rows can be added to the table; false otherwise
+     * @param canDel true if rows can be deleted from the table;
+     *        false otherwise
+     * @param canMove true if rows can be moved up or down in the table;
+     *        false otherwise
+     */
     public static InputTablePane
 	showDialog(Component parent, String title,
 		   ColSpec[] colspec, Vector<Vector<Object>> initialRows,
@@ -283,6 +381,21 @@ public class InputTablePane extends JPanel {
 
     private static Object[] options = {"OK", "Cancel"};
 
+    /**
+     * Create a new InputTablePane, initializing some rows, placing
+     * the table inside a dialog.
+     * @param parent the component on which to center the dialog
+     * @param title the title of the dialog
+     * @param colspec the column specification for the table
+     * @param initialRows the rows to initially add to the table,
+     *        placed as the first rows in the table
+     * @param nrows the number of rows in the table
+     * @param canAdd true if rows can be added to the table; false otherwise
+     * @param canDel true if rows can be deleted from the table;
+     *        false otherwise
+     * @param canMove true if rows can be moved up or down in the table;
+     *        false otherwise
+     */
     public static InputTablePane
 	showDialog(Component parent, String title,
 		   ColSpec[] colspec, int nrows,
@@ -305,6 +418,28 @@ public class InputTablePane extends JPanel {
 	}
     }
 
+    /**
+     * The value returned by
+     * {@link #showDialog(Component,String,InputTablePane)} when
+     * the dialog's OK button is pressed.
+     */
+    public static final int OK = 0;
+
+    /**
+     * The value returned by
+     * {@link #showDialog(Component,String,InputTablePane)} when
+     * the dialog's CANCEL button is pressed.
+     */
+    public static final int CANCEL = 1;
+
+    /**
+     * Show a dialog containing an InputTablePane
+     * @param parent the component on which to center the dialog
+     * @param title the title of the dialog
+     * @param ipane the InputTablePane to display
+     * @return {@link InputTablePane.OK} if the input is accepted;
+     *        {@link InputTablePane.CANCEL} if the input is cancelled
+     */
     public static int showDialog(Component parent, String title,
 				       InputTablePane ipane)
     {
@@ -316,5 +451,4 @@ public class InputTablePane extends JPanel {
 	ipane.stopCellEditing();
 	return status;
     }
-
 }
