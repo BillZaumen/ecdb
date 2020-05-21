@@ -24,6 +24,8 @@ import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.DateFormatter;
 
 /**
+ * Cell editor for dates.
+ * <P>
  * This class is based on the example provided in a
  * <A HREF="https://docs.oracle.com/javase/tutorial/uiswing/examples/components/TableFTFEditDemoProject/src/components/IntegerEditor.java">
  * Java tutorial</A>.  That link includes a copyright and permission

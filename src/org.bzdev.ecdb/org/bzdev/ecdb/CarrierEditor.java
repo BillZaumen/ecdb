@@ -6,6 +6,9 @@ import javax.swing.*;
 
 /**
  * Table-cell editor for ECDB  carriers.
+ * This editor uses a {@link javax.swing.JComboBox}, whose type
+ * parameter is {@link ECDB.CarrierLabeledID}, and that was initialized
+ * from the ECDB database tables.
  */
 public class CarrierEditor extends DefaultCellEditor {
 

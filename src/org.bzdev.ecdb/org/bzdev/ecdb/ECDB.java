@@ -34,6 +34,91 @@ import org.bzdev.util.TemplateProcessor.KeyMapList;
 
 /**
  * Event-Calendar Database Session.
+ * This class uses a relational database using the tables:
+ * <UL>
+ *   <LI>CountryPrefix. The columns are countryPrefix (an instance of
+ *       {@link String}) and label (an instance of {@link String}).
+ *       The primary key is countryPrefix.
+ *   <LI>Carrier. The columns are carrierID (an int) and carrier (a
+ *       String). The primary key is carrierID.
+ *   <LI>CarrierMap. The columns are countryPrefix (an instance of
+ *       {@link String}), carrierID (an int), and idomain (an instance
+ *       of {@link String}). The primary key consists of countryPrefix
+ *       and carrierID.
+ *   <LI>CellPhoneEmail. The columns are countryPrefix (an instance of
+ *       {@link String}), cellNumber (an instance of {@link String}),
+ *        emailAddr (an instance of {@link String}), and setByCarrier
+ *       (a boolean). This table is used as a cache that maps a cell-phone
+ *       number to the email address of its SMS gateway. The primary key
+ *       consists of countryPrefix and cellNumber.
+ *   <LI>UserInfo. The columns are userID (an int), firstName (an instance
+ *       of {@link String}), lastName (an instance of {@link String}),
+ *       lastNameFirst (a boolean), title (an instance of {@link String}),
+ *       emailAddr (an instance of {@link String}), countryPrefix (an
+ *       instance of {@link String}), cellNumber (an instance of
+ *       {@link String}), carrierID (an instance of {@link String}),
+ *       and status (an instance of {@link String}). The primary key is
+ *       userID.
+ *   <LI>Owner. The columns are ownerID (an int), label
+ *       (an instance of {@link String}), summary
+ *       (an instance of {@link String}). The primary key is ownerID.
+ *   <LI>PreEventDefault. The columns are userID (an int), ownerID (an int),
+ *       useDefault (a boolean). The primary key consists of userID and
+ *       ownerID.
+ *   <LI>Location. The columns are locationID (an int), label
+ *       (an instance of {@link String}), location (an instance of
+ *        {@link String}). The primary key is locationID.
+ *   <LI>FirstAlarm. The columns are userID (an int), ownerID (an
+ *       int), locationID (an int), eventTime (an instance of
+ *       {@link Time}), weekday (a boolean), alarmTime (an instance of
+ *       {@link Time}), forEmail (a boolean), and forPhone (a boolean).
+ *       The primary key consists of userID, ownerID, and locationID.
+ *   <LI>SecondAlarm. The columns are userID (an int), ownerID (an int),
+ *       locationID (an int), offset (an int), forEmail (a boolean), and
+ *       forPhone (a boolean). The primary key consists of userID, ownerID,
+ *       and locationID.
+ *   <LI>Event. The columns are eventID (an int), ownerID (an int), label
+ *       (an instance of {@link String}), and description (an instance of
+ *       {@link String}). The primary key is eventID.
+ *   <LI>EventInstance. The columns are instanceID (an int), eventID (an int),
+ *       locationID (an int) preEventType (an instance of {@link String}),
+ *       preEventOffset (a non-negative int), startDate (an instance of
+ *       {@link Date}),  startTime (an instance of {@link Time}),
+ *       endDate (an instance of {@link Date}), endTime (an instance of
+ *       {@link Time}), and status (an instance of {@link String}). The
+ *       primary key i sinstanceID.
+ *   <LI>Series. The columns are seriesID (an int), ownerID (an int), and
+ *       label (an instance of {@link String}). The primarykey is seriesID.
+ *   <LI>SeriesEventInstances. The columns are seriesID (an int) and
+ *       instanceID (an int). The primary key consists of seriesID and
+ *       instanceID.
+ *   <LI>Attendee. The columns are userID (an int), instanceID (an int),
+ *       attendeeState (an instance of {@link String}), attendingPreEvent
+ *       (a boolean), and seriesID (an Integer). The columns emailSeqno
+ *       (an int) and phoneSeqNo (an int) are maintained by ECDB so that
+ *       updates to calendar appointments will have an appropriate
+ *       sequence-number field. The primary key consists of userID and
+ *       instanceID.
+ * </UL>
+ * Some of the table have columns that are maintained automatically
+ * using triggers. These are typically timestamps.
+ * <P>
+ * This database also uses the following roles (there is an option for
+ * whether roles are configured or not):
+ * <UL>
+ *   <LI>ECADMIN:  SELECT, INSERT, UPDATE, and DELETE are granted on
+ *       all tables.
+ *   <LI>ECOWNER: SELECT is granted on all tables. INSERT, UPDATE, and
+ *       DELETE are granted on CellPhoneEmail, Owner, Location, Event,
+ *       EventInstance, Series, SeriesInstance
+ *   <LI>ECUSER: SELECT is granted to all tables. INSERT, UPDATE, and
+ *       DELETE are granted on UnserInf, PreEventDefault, FirstAlarm,
+ *       SecondAlarm, and Attendee.
+ *   <LI>PUBLIC: This is a standard role. SELECT is granted to PUBLIC
+ *       for CountryPrefix, Carrier, and CarrierMap.
+ *   <LI>
+ * </UL>
+ * 
  */
 public class ECDB implements AutoCloseable {
 

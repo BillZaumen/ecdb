@@ -1,7 +1,14 @@
 package org.bzdev.ecdb;
 
 /**
- * Service-provider interface for a CellEmailFinder;
+ * Service-provider interface for a CellEmailFinder.
+ * An instance of {@link CellEmailFinder} will typically use
+ * some Internet service to do the actual lookup. That service
+ * may work for only some prefixes and in some cases, for a
+ * subset of the cell-phone numbers associated with that prefix.
+ * The prefix for the U.S. ("1") covers the U.S., Canada, and
+ * some other countries or regions, typically small ones, and
+ * these can be distinguished by area codes.
  */
 public interface CellEmailFinderSPI {
 

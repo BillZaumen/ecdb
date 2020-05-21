@@ -6,15 +6,39 @@ import java.util.ServiceLoader;
 
 /**
  * Base class for finding the email address to use for an SMS gateway
- * for a cell phone number.
+ * for a cell phone number. Classes implementing this interface
+ * are obtained via a service-provider interface.
+ * @see CellEmailFinderSPI
  */
 public abstract class CellEmailFinder {
 
     static ServiceLoader<CellEmailFinderSPI> providers =
 	ServiceLoader.load(CellEmailFinderSPI.class);
 
+    /**
+     * Look up the email address for a cell phone number's email address
+     * for the number's SMS gateway,
+     * using an instance of {@link CellEmailFinder} obtained from its
+     * service-provider interface.
+     * @param prefix the country prefix (e.g., 1 for the U.S.).
+     * @param cellNumber the cell phone number, not including the
+     *        prefix.
+     */
     public abstract String lookup(String prefix, String cellNumber);
 
+    /**
+     * Look up the cell phone number's email address for the number's
+     * SMS gateway.
+
+     * The ECDB database will be used to find a cached value and if
+     * that is not available or has aged out, the method
+     * {@link CellEmailFinder#lookup(String, String)} will be used to
+     * look up the number using an instance of {@link CellEmailFinder}
+     * obtained from its service-provider interface.
+     * @param prefix the country prefix (e.g., 1 for the U.S.).
+     * @param cellNumber the cell phone number, not including the
+     *        prefix.
+     */
     public static String lookup(ECDB ecdb, Connection conn,
 				String prefix, String cellNumber,
 				int carrierID)
