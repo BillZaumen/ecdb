@@ -34,91 +34,23 @@ import org.bzdev.util.TemplateProcessor.KeyMapList;
 
 /**
  * Event-Calendar Database Session.
- * This class uses a relational database using the tables:
- * <UL>
- *   <LI>CountryPrefix. The columns are countryPrefix (an instance of
- *       {@link String}) and label (an instance of {@link String}).
- *       The primary key is countryPrefix.
- *   <LI>Carrier. The columns are carrierID (an int) and carrier (a
- *       String). The primary key is carrierID.
- *   <LI>CarrierMap. The columns are countryPrefix (an instance of
- *       {@link String}), carrierID (an int), and idomain (an instance
- *       of {@link String}). The primary key consists of countryPrefix
- *       and carrierID.
- *   <LI>CellPhoneEmail. The columns are countryPrefix (an instance of
- *       {@link String}), cellNumber (an instance of {@link String}),
- *        emailAddr (an instance of {@link String}), and setByCarrier
- *       (a boolean). This table is used as a cache that maps a cell-phone
- *       number to the email address of its SMS gateway. The primary key
- *       consists of countryPrefix and cellNumber.
- *   <LI>UserInfo. The columns are userID (an int), firstName (an instance
- *       of {@link String}), lastName (an instance of {@link String}),
- *       lastNameFirst (a boolean), title (an instance of {@link String}),
- *       emailAddr (an instance of {@link String}), countryPrefix (an
- *       instance of {@link String}), cellNumber (an instance of
- *       {@link String}), carrierID (an instance of {@link String}),
- *       and status (an instance of {@link String}). The primary key is
- *       userID.
- *   <LI>Owner. The columns are ownerID (an int), label
- *       (an instance of {@link String}), summary
- *       (an instance of {@link String}). The primary key is ownerID.
- *   <LI>PreEventDefault. The columns are userID (an int), ownerID (an int),
- *       useDefault (a boolean). The primary key consists of userID and
- *       ownerID.
- *   <LI>Location. The columns are locationID (an int), label
- *       (an instance of {@link String}), location (an instance of
- *        {@link String}). The primary key is locationID.
- *   <LI>FirstAlarm. The columns are userID (an int), ownerID (an
- *       int), locationID (an int), eventTime (an instance of
- *       {@link Time}), weekday (a boolean), alarmTime (an instance of
- *       {@link Time}), forEmail (a boolean), and forPhone (a boolean).
- *       The primary key consists of userID, ownerID, and locationID.
- *   <LI>SecondAlarm. The columns are userID (an int), ownerID (an int),
- *       locationID (an int), offset (an int), forEmail (a boolean), and
- *       forPhone (a boolean). The primary key consists of userID, ownerID,
- *       and locationID.
- *   <LI>Event. The columns are eventID (an int), ownerID (an int), label
- *       (an instance of {@link String}), and description (an instance of
- *       {@link String}). The primary key is eventID.
- *   <LI>EventInstance. The columns are instanceID (an int), eventID (an int),
- *       locationID (an int) preEventType (an instance of {@link String}),
- *       preEventOffset (a non-negative int), startDate (an instance of
- *       {@link Date}),  startTime (an instance of {@link Time}),
- *       endDate (an instance of {@link Date}), endTime (an instance of
- *       {@link Time}), and status (an instance of {@link String}). The
- *       primary key i sinstanceID.
- *   <LI>Series. The columns are seriesID (an int), ownerID (an int), and
- *       label (an instance of {@link String}). The primarykey is seriesID.
- *   <LI>SeriesEventInstances. The columns are seriesID (an int) and
- *       instanceID (an int). The primary key consists of seriesID and
- *       instanceID.
- *   <LI>Attendee. The columns are userID (an int), instanceID (an int),
- *       attendeeState (an instance of {@link String}), attendingPreEvent
- *       (a boolean), and seriesID (an Integer). The columns emailSeqno
- *       (an int) and phoneSeqNo (an int) are maintained by ECDB so that
- *       updates to calendar appointments will have an appropriate
- *       sequence-number field. The primary key consists of userID and
- *       instanceID.
- * </UL>
- * Some of the table have columns that are maintained automatically
- * using triggers. These are typically timestamps.
  * <P>
- * This database also uses the following roles (there is an option for
- * whether roles are configured or not):
- * <UL>
- *   <LI>ECADMIN:  SELECT, INSERT, UPDATE, and DELETE are granted on
- *       all tables.
- *   <LI>ECOWNER: SELECT is granted on all tables. INSERT, UPDATE, and
- *       DELETE are granted on CellPhoneEmail, Owner, Location, Event,
- *       EventInstance, Series, SeriesInstance
- *   <LI>ECUSER: SELECT is granted to all tables. INSERT, UPDATE, and
- *       DELETE are granted on UnserInf, PreEventDefault, FirstAlarm,
- *       SecondAlarm, and Attendee.
- *   <LI>PUBLIC: This is a standard role. SELECT is granted to PUBLIC
- *       for CountryPrefix, Carrier, and CarrierMap.
- *   <LI>
- * </UL>
- * 
+ * The ECDB class provides an API for initializing and manipulating a
+ * relational database representing an event calendar. In addition to
+ * methods that select, insert, update, or delete table entries, ECDB
+ * can generate RFC 5545 calendar appointments and send them via email.
+ * <P>
+ * Calendar appointments include the starting date, starting time,
+ * ending date, and ending time for an event, whether there is some
+ * activity before an event and when that starts, and two optional
+ * alarms, with the times set on a per-user basis.  The class will also
+ * send messages with or without calendar appointments to users to
+ * either an email address or to the user's SMS service.  Each calendar
+ * appointment is tagged with fields that allow a previously sent calendar
+ * appointment to be updated.
+ *
+ * Please see <A HREF="doc-files/ECDB.html">the ECDB description</A> for
+ * a more detailed overview of this class.
  */
 public class ECDB implements AutoCloseable {
 
@@ -1695,8 +1627,8 @@ public class ECDB implements AutoCloseable {
      *        name when printed; false if the last name follows the
      *        first name
      * @param emailAddr the user's email address
-     * @param the user's country prefix (1 for the U.S.)
-     * @param the user's cell phone number
+     * @param countryPrefix the user's country prefix (1 for the U.S.)
+     * @param cellNumber the user's cell phone number
      * @param carrierID the ID for the user's cell phone carrier
      */
     public void addUserInfo(Connection conn,
@@ -1720,8 +1652,8 @@ public class ECDB implements AutoCloseable {
      *        name when printed; false if the last name follows the
      *        first name
      * @param emailAddr the user's email address
-     * @param the user's country prefix (1 for the U.S.)
-     * @param the user's cell phone number
+     * @param countryPrefix the user's country prefix (1 for the U.S.)
+     * @param cellNumber the user's cell phone number
      * @param carrierID the ID for the user's cell phone carrier
      * @param commit true if the new changes should be committed; false
      *        otherwise
@@ -1912,7 +1844,7 @@ public class ECDB implements AutoCloseable {
     /**
      * Delete user data based on user IDs.
      * @param conn the database connection
-     * @param userIds the user IDs for the users that are to be deleted
+     * @param userIDs the user IDs for the users that are to be deleted
      */
     public void deleteUserInfo(Connection conn, int[] userIDs)
 	throws SQLException
@@ -2446,12 +2378,12 @@ public class ECDB implements AutoCloseable {
      * @param lastNameFirst true if the user's last name is followed by
      *        the user's first name; false if the user's first name is
      *        followed by theuser's last name; null if ignored
-     * @param tite the user's title; null if ignored
+     * @param title the user's title; null if ignored
      * @param emailAddr the user's email address; null if ignored
      * @param countryPrefix the country prefix for the user's cell-phone
      *         number; null if ignored
      * @param cellNumber the user's cell-phone number; null if ignored
-     * @param carrier ID the carrierID for the user's cell-phone carrier;
+     * @param carrierID the carrierID for the user's cell-phone carrier;
      *        -1 if ignored
      * @param status the user's status - ACTIVE, NOTACTIVE, CANCELLED;
      *        null if ignored
@@ -2480,12 +2412,12 @@ public class ECDB implements AutoCloseable {
      * @param lastNameFirst true if the user's last name is followed by
      *        the user's first name; false if the user's first name is
      *        followed by theuser's last name; null if ignored
-     * @param tite the user's title; null if ignored
+     * @param title the user's title; null if ignored
      * @param emailAddr the user's email address; null if ignored
      * @param countryPrefix the country prefix for the user's cell-phone
      *        number; null if ignored
      * @param cellNumber the user's cell-phone number; null if ignored
-     * @param carrier ID the carrierID for the user's cell-phone carrier;
+     * @param carrierID the carrierID for the user's cell-phone carrier;
      *        -1 if ignored
      * @param status the user's status - ACTIVE, NOTACTIVE, CANCELLED;
      *        null if ignored
@@ -2768,7 +2700,7 @@ public class ECDB implements AutoCloseable {
     /**
      * Delete an entry from the owner table given a search pattern.
      * @param conn the database connection
-     * @param ownerID the owner ID for the entry
+     * @param pattern a search pattern for the owner
      */
     public void deleteOwner(Connection conn, String pattern)
 	throws SQLException
@@ -2780,7 +2712,7 @@ public class ECDB implements AutoCloseable {
      * Delete an entry from the owner table given a search pattern, indicating
      * if the deletion is interactive.
      * @param conn the database connection
-     * @param ownerID the owner ID for the entry
+     * @param pattern a search pattern for the owner
      * @param force true if all matching users should be deleted; false if
      *        each deletion must be confirmed
      */
@@ -2849,7 +2781,7 @@ public class ECDB implements AutoCloseable {
     /**
      * Delete an entry from the owner table a list of owner IDs.
      * @param conn the database connection
-     * @param ownerID the owner ID for the entry
+     * @param ownerIDs the owner IDs for the entries
      */
     public void deleteOwner(Connection conn, int[] ownerIDs)
 	throws SQLException
@@ -3476,7 +3408,7 @@ public class ECDB implements AutoCloseable {
      * For the full listing, each row contains the location ID,
      * followed by the label, followed by the location.
      * @param conn the database connection
-     * @param pattern the pattern to which labels should match
+     * @param patterns  patterns, one of which should match a labels
      * @param full true if a row contains all of the the publicly
      *        accessible columns; false if a rows contains only a
      *        location ID
@@ -5186,7 +5118,6 @@ public class ECDB implements AutoCloseable {
     /**
      * Add a row to the event table.
      * @param conn the database connection
-     * @param userID the userID
      * @param ownerID the owner ID
      * @param label the event's label
      * @param description the event's description
@@ -5202,7 +5133,6 @@ public class ECDB implements AutoCloseable {
      * Add a row to the event table, indicating if database changes should
      * be committed.
      * @param conn the database connection
-     * @param userID the userID
      * @param ownerID the owner ID
      * @param label the event's label
      * @param description the event's description
@@ -6225,12 +6155,9 @@ public class ECDB implements AutoCloseable {
      * time, and end date, and end time, and a status field
      * @param conn the database connection
      * @param ownerID an owner ID; -1 for any owner
-     * @param eventID an event; -1 for any event
      * @param locationID an location ID; -1 for any location
      * @param startDate the start date for an event instance; null for any
      * @param startTime the start time for an event instance; null for any
-     * @param endDate the end date for an event instance; null for any
-     * @param endTime the end time for an event instance; null for any
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a vector of rows
@@ -6478,7 +6405,7 @@ public class ECDB implements AutoCloseable {
      * ID, a pre-event type, a pre-event offset, a start data, a start
      * time, and end date, and end time, and a status field
      * @param conn the database connection
-     * @param id the instance ID the row to include.
+     * @param instanceID the instance ID the row to include.
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a vector of rows
@@ -7047,8 +6974,11 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param ownerID the ownerID for the series that should be listed; -1
      *        for any owner
+     * @param all true if there is an entry for all series matching the
+     *        specified owner (or all owners); false if there is no entry
+     *        for all series
      */
-    public Object[] listSeriesLabels(Connection conn, int ownerID)
+    public Object[] listSeriesLabels(Connection conn, int ownerID, boolean all)
 	throws SQLException
     {
 	// This returns a string because JOptionPane 'show' methods
@@ -7056,9 +6986,11 @@ public class ECDB implements AutoCloseable {
 	// handle both a vector and an array.
 	Vector<Vector<Object>> rows;
 	rows = listSeries(conn, ownerID, null, true);
-	Object[] results = new Object[rows.size() + 1];
-	results[0] = "[ All ]";
-	int i = 1;
+	Object[] results = new Object[rows.size() + (all? 1: 0)];
+	int i = 0;
+	if (all) {
+	    results[i++] = "[ All ]";
+	}
 	if (ownerID == -1) {
 	    for (Vector<Object> row: rows) {
 		results[i++] = (OwnerLabeledID)row.get(1)
@@ -7229,7 +7161,7 @@ public class ECDB implements AutoCloseable {
 
     /** List rows in the series table that match specific series IDs.
      * @param conn the database connection
-     * @param seriesID the series ID
+     * @param ids the series IDs for the series to list
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a series labeled ID for the specified series ID
@@ -8214,7 +8146,7 @@ public class ECDB implements AutoCloseable {
 
     /**
      * Count the number of rows in the attendee with an instance id
-     * that matches and event instance with a specified location ane
+     * that matches an event instance with a specified location and
      * event ID, where the corresponding event has a specified owner.
      * @param conn the database connection
      * @param ownerID an owner ID; -1 for any owner
@@ -9314,7 +9246,7 @@ public class ECDB implements AutoCloseable {
 	{"countryPrefix", "carrierID", "idomain"}, // carrierMap [1]
 	{"userID",},				   // user [2]
 	{"ownerID", "label", "summary", "idomain"}, // owner [3]
-	{"userID", "ownerID", "useDefault"}, // preEventDefault [4]
+	{"userID", "ownerID", "attend"}, // preEventDefault [4]
 	{"locationID"},			     // location [5]
 	{"userID", "ownerID", "locationID", "eventTime", "weekday",
 	 "alarmTime", "forEmail", "forPhone"}, // first alarm [6]
@@ -9334,7 +9266,7 @@ public class ECDB implements AutoCloseable {
 	{"userID", "firstName", "lastName", "LNF", "title", "emailAddr", 
 	 "countryPrefix", "cellNumber", "carrier", "status"}, // user [2]
 	{"ownerID", "label", "summary", "idomain"}, // owner [3]
-	{"user", "owner", "useDefault"}, // preEventDefault [4]
+	{"user", "owner", "attend"}, // preEventDefault [4]
 	{"locationID", "label", "locationName"}, // location [5]
 	{"user", "owner", "location", "eventTime", "weekday", "alarmTime",
 	 "forEmail", "forPhone"}, // first alarm [6]

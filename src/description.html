@@ -1,0 +1,670 @@
+<!DOCTYPE HTML>
+<HTML>
+<BODY>
+<P>
+  <TITLE>Description of the ECDB module</TITLE>
+</HEAD>
+<BODY>
+<H2>Description of the ECDB module</H2>
+<P>
+  This module provides a single package, org.bzdev.ecdb, that provides
+an API for initializing and manipulating a relational database
+representing an event calendar. In addition to methods that select,
+insert, update, or delete table entries, instances of
+{@link org.bzdev.ecdb.ECDB} can generate
+<A HREF="https://tools.ietf.org/html/rfc5545">iCalendar</A>
+appointments and send them via email.
+<P>
+  Calendar appointments include the starting date, starting time,
+ending date, and ending time for an event, whether there is some
+activity before an event and when that starts, and two optional
+alarms, with the times set on a per-user basis.  The class will also
+send messages with or without calendar appointments to users to either
+an email address or to the user's SMS service.  Each calendar
+appointment is tagged with fields that allow a previously sent
+calendar appointment to be updated.
+<P>
+  The database tables can grouped into four categories.  These are
+shown in the following four diagrams. In these tables, column names
+followed with "(PK)" indicate a primary key, and those whose column
+names are followed with "(FK)" denote foreign keys. The types are Java
+types, not SQL types. The Java types used, which are useful to document
+because of the use of JDBC, are the following:
+<UL>
+  <LI><B>int</B>. The corresponding SQL type is an integer and the
+    column cannot contain null values.
+  <LI><B>Integer</B>. The corresponding SQL type is an integer type and
+    the column can contain null values.
+  <LI><B>boolean</B>. The corresponding SQL type is a boolean and the
+    column cannot contain null values
+  <LI><B>Boolean</B>. The corresponding SQL type is a boolean and the
+    column can contain null values
+  <LI><B>String</B>. The corresponding SQL type contains character data.
+  <LI><B>Date</B>. The Java type is {@link java.sql.Date} and the SQL
+    type is a date.
+  <LI><B>Time</B>. The Java type is {@link java.sql.Time} and the SQL
+    type is a date.
+</UL>
+In some diagrams, tables shown in blue (or gray if printed with a black
+and white printer) are references to tables from another diagram.
+<P>
+  The first diagram shows the tables for user data and some tables
+used to map cell phone numbers to the email address used by an SMS
+gateway provided by the user's wireless carrier:
+<CENTER>
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/user.png">
+</CENTER>
+<P>
+  The second diagram shows the tables for event owners, locations,
+events, and event instances:
+<CENTER>
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/owner.png">
+</CENTER>
+<P>
+  The third diagram shows the tables for alarms and for a default
+choice for attending activities before an event:
+<CENTER>
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/timing.png">
+</CENTER>
+<P>
+  The fourth diagram shows the attendee table and tables defining
+a series:
+<CENTER>
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/attendees.png">
+</CENTER>
+<P>
+There is a <A HREF="sql.xml.txt">default implementation</A> of these
+tables, represented as a set of Java properties saved in the standard
+XML format described in the documentation for the class
+{@link java.util.Properties}. Each property's key consists of a
+token naming some text, and optionally a token representing a database
+implementation, with these keys separated by a period.
+The SQL keys are
+<UL>
+  <LI><B>sqlShutdownState</B>. Some databases throw an error when the
+    database is being shut down. This lists the names of these errors.
+  <LI><B>init</B>. By default, this property is called once when a database
+    is being created. If null, it is ignored. Any SQL statements provided
+    by this property will be called at the start of the process of
+    creating database.
+  <LI><B>initForAuth</B>. By default, this property is called once
+    when a database is being created and configured for user
+    authorization. If null, it is ignored.
+  <LI><B>addUser</B>. The value is a format string for generating an
+    SQL statement to add a user, with the user's password, to the
+    database. This property is used only if the database was
+    configured for user authentication and after the
+    <B>initForAuth</B> SQL statement (if any) was executed.
+  <LI><B>initForRoles</B>. By default, this property is called once
+    when a database is being created and configured to use roles.
+    If null, it is ignored.
+  <LI><B>hasRoles</B>. This property is an SQL statement that will
+    return a non-empty row set if roles have been configured and an
+    empty result set otherwise.
+  <LI><B>roles</B>. This property is a sequence of SQL statements that
+    will define the database roles that ECDB uses. It is not called if
+    roles are not being configured.
+  <LI><B>hasSchemas</B>. This is called when tables are being created.
+    It is an SQL statement that will return a non-empty row set if
+    the ECDB schema exists and an empty row set if the schema does not
+    exist.  It is used to ensure that an attempt to create the tables
+    twice will gracefully abort.
+  <LI><B>schemas</B>. This is called when tables are being created. It
+    contains an SQL statement that will create ECDB's schema.
+  <LI><B>tables</B>. This is called when tables are being created. It
+    creates all the tables used by ECDB.
+  <LI><B>addCountryPrefixes</B>. This is a sequence of SQL statements
+    that initializes the CountryPrefixes table. It is called after
+    the tables are created.
+  <LI><B>initialCarriers</B>. This is a sequence of SQL statements
+    that initializes the Carriers table. It is called after
+    the tables are created.
+  <LI><B>initialCarrierMap</B>.  This is a sequence of SQL statements
+    that initializes the CarrierMap table. It is called after
+    the tables are created and after the country prefixes and carriers
+    have been added to the database.
+  <LI><B>grants</B>. This is is a sequence of SQL statements that
+    grants various types of access to tables. It is used as the last
+    step in creating ECDB tables and applies only if the database uses
+    roles.
+</UL>
+The SQL keys for manipulating the data base are the following (these
+should not have to be modified unless the tables were modified in an
+incompatible way or a database does not recognize the use of '?' in
+prepared statements). Two general keys are the following:
+<UL>
+  <LI><B>theSchema</B>. This property provides the name of the
+    event-calendar schema. It should not be modified.
+  <LI><B>setselectFormat</B>. This property provides a format string used to
+    set a column to the value returned by a select statement.
+</UL>
+The next set of keys are for the carrier, carrier mapping, and cellphone
+email tables:
+<UL>
+  <LI><B>listCarriers</B>. This property provides an SQL statement that
+    will list all carriers.
+  <LI><B>listCarrier</B>. This property provides an SQL statement that
+    will list one row from the carrier table given its carrier ID.
+  <LI><B>listCarriersMatching</B>.This property provides an SQL
+    statement that will list rows from the carrier table whose name (its
+    <B>carrier</B> column) matches an SQL pattern.
+  <LI><B>addCarrier</B>. This property provides an SQL statement that will
+    create a new row in the carrier table.
+  <LI><B>findCarrier</B>. This property provides an SQL statement that
+    will create a row set matching a carrier specified by name. This must
+    be an exact match.
+  <LI><B>deleteCarrierByID</B>. This property provides an SQL statement that
+    will delete a carrier given its ID.
+  <LI><B>deleteCarrierMatching</B>. This property provides an SQL
+    statement that will delete a carrier matching an SQL pattern.
+  <LI><B>updateCarrier</B>. This property provides an SQL statement that
+    will modify a carrier's name given its carrier ID.
+  <LI><B>addToCarrierMap</B>. This property provides an SQL statement that
+    will add a row to the carrier-map table given the values in the idomain
+    column, the countryPrefix column, and carrierID column in that order.
+  <LI><B>updateCarrierDomain</B>. This property provides an SQL statement that
+    will change the idomain column of a carrier-map table row with a
+    specified countryPrefix and carrier ID.
+  <LI><B>deleteFromCarrierMap</B>. This property provides an SQL statement that
+    will delete a row from the carrier-map table given the country prefix
+    and carrierID for that row.
+  <LI><B>sortedCarrierMap</B>. This property provides an SQL statement that
+    will generate a list of the rows in a carrier-map table sorted by the values
+    in the country prefix and carrier columns.
+  <LI><B>findCarrierMap</B>. This property provides an SQL statement that
+    will generate a list of country prefixes, carrier IDs, carriers, and
+    an internet domain given patterns matching a country prefix and a carrier.
+  <LI><B>findCarrierMapByID</B>. This property provides an SQL statement that
+    ill generate a list of country prefixes, carrier IDs, carriers, and
+    an internet domain given patterns matching a country prefix and a carrier
+    ID.
+  <LI><B>getCarrierMapDomain</B>. This property provides an SQL statement that
+    will generate a column of Internet domain names given a country prefix
+    and a carrier ID.
+  <LI><B>addCellPhoneEmail</B>. This property provides an SQL
+    statement that will insert a country prefix, a cellphone number,
+    a cell-phone email address, and a flag indicating if this entry was
+    set on the basis of a cell-phone carrier or not.
+  <LI><B>updateCellPhoneEmail</B>. This property provides an SQL statement that
+    will update an email address and set-by-carrier flag for a specified
+    country prefix and cellphone number.
+  <LI><B>deleteCellPhoneEmail</B>. This property provides an SQL statement that
+    will delete a mapping from a country prefix and cellphone number to the
+    email address of an SMS gateway.
+  <LI><B>getCellPhoneEmail</B>. This property provides an SQL statement that
+    will return a row containing the email address of an SMS gateway, the
+    set-by-carrier flag, and the modification time of a mapping given the
+    mapping's country prefix and cell-phone number.
+</UL>
+The next set of mappings are for the user-info table:
+<UL>
+  <LI><B>insertUserInfo</B>. This property provides an SQL statement that
+    will add a new user to the user-info table.
+  <LI><B>deleteUserInfoByID</B>. This property provides an SQL statement that
+    will delete a user from the user-info table given a user ID.
+  <LI><B>setUserData</B>. This property provides a format string for an
+    SQL statement that will set the columns for a row with a specified user ID.
+  <LI><B>getUserInfoData</B>. This property provides an SQL statement that
+    will generate a row set containing all columns for a specified user ID
+  <LI><B>getUserInfoDataForKeymap</B>. This property provides an SQL
+    statement that will provide a row set with a row containing the
+    columns firstName, lastName, lastNameFirst and title for a specified
+    user ID.
+  <LI><B>findUserInfo</B>. This property provides an SQL statement that
+    will produce a row set with a userID column for rows whose first name,
+    last name, email address, or cell-phone number matches a pattern.
+  <LI><B>listUserInfo</B>. This property provides an SQL statement that
+    will produce a row set whose columns are userID, firstName, lastName,
+    lastNameFirst, title, emailAddr, countryPrefix, cellNumber, carrier,
+    and status for all rows for which the status is not CANCELLED.
+  <LI><B>listUserInfoForID</B>. This property provides an SQL statement that
+    will produce a row set whose columns are userID, firstName, lastName,
+    lastNameFirst, title, emailAddr, countryPrefix, cellNumber, carrier,
+    and status for a specific user ID (the primary key so the row set will
+    contain at most one row).  If the status is 'CANCELLED' the row is ignored.
+  <LI><B>listUserInfoMatching</B>. This property provides an SQL statement that
+    will produce a row set whose columns are userID, firstName, lastName,
+    lastNameFirst, title, emailAddr, countryPrefix, cellNumber, carrier,
+    and status for rows whose status is not CANCELLED and whose
+    firstName, lastName, or emailAddr match a pattern.
+  <LI><B>listUserInfoMatchingCell</B>. This property provides an SQL
+    statement that will produce a row set whose columns are userID,
+    firstName, lastName, lastNameFirst, title, emailAddr,
+    countryPrefix, cellNumber, carrier, and status for rows whose
+    status is not CANCELLED and whose cell-phone number matches a pattern.
+  <LI><B>listUserInfoMatchingIntlCell</B>. This property provides an
+    SQL statement that will produce a row set whose columns are
+    userID, firstName, lastName, lastNameFirst, title, emailAddr,
+    countryPrefix, cellNumber, carrier, and status for rows whose
+    status is not CANCELLED and whose countryPrefix concatenated with
+    its cell-phone number is a string that matches a given pattern.
+  <LI><B>findUserInfoMatching</B>. This property provides an SQL
+    statement that will produce a row set containing the user IDs of
+    those rows whose status is not CANCELLED and whose firstName, lastName,
+    or emailAddr columns match a given pattern
+  <LI><B>findUserInfoMatchingCell</B>. This property provides an SQL
+    statement that will produce a row set containing the user IDs of
+    those rows whose status is not CANCELLED and whose cellNumber field
+    matches a given pattern.
+  <LI><B>findUserInfoMatchingIntlCell</B>. This property provides an
+    SQL statement that will produce a row set containing the user IDs of
+    those rows whose status is not CANCELLED and for which the concatenation
+    of its countryPrefix and cellNumber match a given pattern.
+</UL>
+The next set of mappings are for the owner table:
+<UL>
+  <LI><B>insertOwner</B>. This property provides an SQL statement that
+    will add a row to the owner table, providing the row's label, summary,
+    and idomain columns.
+  <LI><B>deleteOwnerByID</B>. This property provides an SQL statement that
+    will delete a row from the owner table given the row's owner ID.
+  <LI><B>listOwners</B>. This property provides an SQL statement that
+    will list all rows in the owner table
+  <LI><B>listOwnersMatching</B>. This property provides an SQL statement that
+    will produce a rowset containing all the owner-table rows whose label
+    matches a given pattern
+  <LI><B>listOwnersByID</B>. This property provides an SQL statement that
+    will produce a rowset containing  the owner-table row whose owner ID
+    matches a given pattern (or an empty row set if there is no such row).
+  <LI><B>setOwnerData</B>. This property provides a format string for
+    an SQL statement that will update a column of the owner table for the
+    row with the given owner ID.
+  <LI><B>getOwnerData</B>. This property provides a format string for
+    an SQL statement that will produce a row set with specific columns
+    and where the owner ID has a given value (an empty row set if there is
+    no match).
+  <LI><B>findOwnerMatching</B>. This property provides an SQL statement that
+    will produce a row set whose rows contain only the ownerID column and
+    whose label matches a given pattern
+</UL>
+The next set of mappings are for the location table:
+<UL>
+  <LI><B>insertLocation</B>. This property provides an SQL statement that
+    will add a row to the location table, providing the row's label and
+    location columns.
+  <LI><B>deleteLocationByID</B>. This property provides an SQL statement that
+    will delete a row from the location table for a given location ID.
+  <LI><B>listLocations</B>. This property provides an SQL statement that
+    will produce a row set that contains all columns for all rows in the
+    location table.
+  <LI><B>listLocationsMatching</B>. This property provides an SQL
+    statement that will produce a row set containing all columns of the
+    location table such that a row in the label column matches a pattern.
+  <LI><B>listLocationsByID</B>. This property provides an SQL statement that
+    will  produce a row set containing all columns of the
+    location table with a given location ID.
+  <LI><B>setLocationData</B>. This property provides a format string
+    for an SQL statement that  will update columns in the location table
+    for a given location ID.
+  <LI><B>getLocationData</B>. This property provides a format string
+    for an SQL statement that will select given columns from the location
+    table for a given location ID. The rowset returned will have 0 or 1
+    rows.
+  <LI><B>findLocationMatching</B>. This property provides an SQL statement that
+    will produce a row sets containing the locationID column for those rows
+    in the location table for which the label column matches a given pattern.
+</UL>
+The next set of mappings are for the alarm and pre-event tables:
+<UL>
+  <LI><B>insertFirstAlarm</B>. This property provides an SQL statement
+    that will insert a new row into the first alarm table specifying
+    values for the userID, ownerID, locationID, eventTime, weekday,
+    alarmTime, forEmail, and forPhone columns.
+  <LI><B>deleteFirstAlarm</B>. This property provides an SQL statement
+    that will delete a row from the firstAlarm table given values for
+    the userID, ownerID, locationID, eventTime, and weekday columns.
+  <LI><B>listFirstALarms</B>. This property provides a format string
+    for an SQL statement that will produce a row set for rows with a
+    given userID and additional criteria.
+  <LI><B>setFirstAlarmData</B>. This property provides a format string
+    for an SQL statement that will set fields for a row in the first alarm
+    table given its primary key.
+  <LI><B>insertSecondAlarm</B>. This property provides an SQL statement that
+    will insert a new row into the second alarm table given values for the
+    userID, ownerID, locationID, offset, forEmail, and forPhone columns.
+  <LI><B>listSecondAlarm</B>. This property provides a format string
+    for an SQL statement that will produce a row set, each row of which
+    contains the userID, ownerID, locationID, offset, forEmail, and forPhone
+    columns of the second alarm table for a particular userID and with
+    constraints on some of the other fields.
+  <LI><B>deleteSecondAlarm</B>. This property provides an SQL statement that
+    will delete a row from the second alarm table for a given userID,
+    ownerID, and locationID.
+  <LI><B>deleteSecondAlarms</B>. This property provides a format string for
+    an SQL statement that will delete rows from the second alarm table with
+    a given userID and with values for other columns.
+  <LI><B>setSecondAlarm</B>. This property provides a format string
+    for an SQL statement that will update columns in a selected row from
+    the second alarm table. The row is selected by providing the values
+    of its userID, ownerID, and locationID columns.
+  <LI><B>insertPreEventDefault</B>. This property provides an SQL
+    statement that will add a new row to the pre-event default table.
+    The columns whose values are set for the new row are the userID,
+    ownerID, and 'attend' columns.
+  <LI><B>listPreEventDefaults</B>. This property provides a format
+    string for an SQL statement that will produce a row set containing
+    the userID, ownerID, and 'attend' columns of the pre-event default
+    table
+  <LI><B>getPreEventDefault</B>. This property provides an SQL
+    statement that will produce the value in the 'append' column of
+    the pre-event-default table given the values of the userID and
+    ownerID columns.
+  <LI><B>deletePreEventDefault</B>. This property provides a format
+    string for an SQL statement that will delete a row in the
+    pre-event-default table given a user ID and some other criteria.
+  <LI><B>setPreEventDefault</B>. This property provides an SQL
+    statement that will set the value in the 'append' column of
+    the pre-event-default table given the values of the userID and
+    ownerID columns.
+</UL>
+The next set of mappings are for the event table:
+<UL>
+  <LI><B>insertEvent</B>. This property provides an SQL
+    statement that will add a new row to the event table,
+    given the values for the ownerID, label, and description columns.
+  <LI><B>deleteEventByID</B>. This property provides an SQL
+    statement that will delete a row from the event table given the
+    value for the row's eventID column.
+  <LI><B>listEvents</B>. This property provides an SQL
+    statement that will produce a row set containing all the rows
+    from the event table.
+  <LI><B>listEventsForOwner</B>. This property provides an SQL
+    statement that will produce a row set containing all the rows
+    from the event table with a given value in the row's ownerID column.
+  <LI><B>listEventsMatching</B>. This property provides an SQL
+    statement that will produce a row set containing all the rows
+    from the event table that have a value in their label column that
+    matches a given pattern.
+  <LI><B>listEventsByID</B>. This property provides an SQL
+    statement that will produce a row set containing all the row
+    from the event table with a given value in its eventID column. The
+    row set will be empty if there is no match.
+  <LI><B>setEventData</B>. This property provides a format string for an SQL
+    statement that will set the value of some columns given the value for
+    the eventID column.
+  <LI><B>getEventData</B>. This property provides a format string for an SQL
+    statement that will get the value in specified columns for a given value
+    for the eventID column.
+  <LI><B>findEventMatching</B>. This property provides a format string
+    for an SQL statement that will produce a row set with only an eventID
+    column given various criteria.
+</UL>
+The next set of mappings are for the event-instance table:
+<UL>
+  <LI><B>insertEventInstance</B>. This property provides an SQL
+    statement that will add a row to the event-instance table, given values
+    for the columns eventID, locationID, preEventType, preEventOffset,
+    startDate,  startTime, endDate, endTime, status.
+  <LI><B>deleteEventInstanceByID</B>. This property provides an SQL
+    statement that will delete a row from the event-instance table given
+    the instanceID and provided that the status is 'CANCELLED'
+  <LI><B>deleteCanceledEventInstances</B>. This property provides an SQL
+    statement that will delete all rows from the event-instance table
+    whose status column has the value CANCELLED.
+  <LI><B>setEventInstanceData</B>. This property provides a format
+    string for an SQL statement that will set the value of various
+    columns for a given instance ID.
+  <LI><B>listEventInstance</B>. This property provides an SQL
+    statement that will produce a row set with the row (if any) matching
+    a given instance ID.
+  <LI><B>listEventInstances</B>. This property provides an SQL
+    statement that will produce a row set with all columns in the
+    event-instance table.
+  <LI><B>listEventInstancesMatching</B>. This property provides a
+    format string for an SQL statement that will produce a row set
+    containing rows in the event-instance table that satisfy some
+    constraints. The constraints appear in a WHERE clause that can
+    use the aliases tbli for the event-instance table and tble for
+    the event table.  The WHERE clause will start with
+    tbli.eventID = tble.eventID, so that selections from either table
+    share the same event ID.
+  <LI><B>findEventInstancesMatching</B>. This property provides a
+    format string for an SQL statement that will produce a row set
+    containing an instanceID column. The WHERE clause is supplied by
+    the user of this property.
+</UL>
+The next set of mappings are for the series tables:
+<UL>
+  <LI><B>insertSeries</B>.This property provides an SQL
+    statement that will add a row to the series table, given an
+    owner ID and a label for the series.
+  <LI><B>deleteSeriesByID</B>. This property provides an SQL
+    statement that will delete a series given its series ID.
+  <LI><B>listSeries</B>. This property provides a format string for an SQL
+    statement that will produce a row set for which each row contains all
+    the columns in the series table and for which the rows satisfy
+    constraints provided as a boolean expression for a WHERE clause.
+  <LI><B>listSeriesByID</B>. This property provides an SQL
+    statement that will produce a row set containing the row with the
+    given series ID.
+  <LI><B>setSeries</B>. This property provides a format string for an SQL
+    statement that will update fields for a specified series ID.
+  <LI><B>insertSeriesInstance</B>. This property provides an SQL
+    statement that will add a row to the series-instance table given a
+    series ID and an instance ID.
+  <LI><B>deleteSeriesInstance</B>. This property provides a format
+    string for an SQL statement that will delete rows from the
+    series-instance table given a series of constraints added to the
+    WHERE clause.
+  <LI><B>listSeriesInstance</B>. This property provides a format
+    string for an SQL statement that will produce row sets. The
+    caller must supply the WHERE clause.
+  <LI><B>listSeriesInstanceByOwner</B>. This property provides a
+    format string an SQL statement that will produce row sets whose
+    columns are seriesID and instanceID.  The alias stbl refers to the
+    series table, the alias itbl refers to the event-instance table,
+    and the alias etbl refers to the event table. There is a constraint
+    that stbl.instanceID = itbl.instanceID and  itbl.eventID = etbl.eventID.
+    The user can add additional constraints as boolean expressions that
+    will appear in  a WHERE clause.
+</UL>
+The next set of mappings are for the attendee table:
+<UL>
+  <LI><B>insertAttendee</B>. This property provides an SQL
+    statement that will add a row to the attendee table given the values
+    for the userID, instanceID, attendingPreEvent, and seriesID columns.
+    The attendingPreEvent and seriesID values may be null.
+  <LI><B>deleteAttendee</B>. This property provides an SQL statement
+    that will delete a row in the attendee table given values for the
+    row's userID and instanceID columns.
+  <LI><B>listAttendees</B>. This property provides a format string for
+    an SQL statement that will produce a row set containing all rows
+    that meet some criteria. The format string contains a "%s" that would
+    typically be replaced with a "WHERE" clause.
+  <LI><B>setAttendeeData</B>. This property provides a format string
+    for an SQL statement that will set the values for various columns
+    of a row given the row's userID and instanceID values. The "%s" in
+    the format string provides a "%s" between the SET and WHERE tokens
+    in an SQL UPDATE statement.
+  <LI><B>getLastEmailTime</B>. This property provides an SQL
+    statement that will produce a row set with 0 or 1 rows and only
+    the attendee tables lastEmailTime column given the values for the
+    userID and instanceID columns.
+  <LI><B>getLastPhoneTime</B>. This property provides an SQL
+    statement that will produce a row set with 0 or 1 rows and only
+    the attendee tables lastPhoneTime column given the values for the
+    userID and instanceID columns.
+</UL>
+The next set of mappings are provided for supporting various operations:
+<UL>
+  <LI><B>applySeries1</B>. This property provides an SQL
+    statement that will set the attendee state to CANCELLED for those
+    rows in the attendee table with a given user ID and series ID
+    when the instanceID is not in the series-instance table for the
+    given series ID.  This handles a case in which the series-instance
+    table's entries for a series was changed and where the series was
+    applied previously.
+  <LI><B>applySeries2</B>. This property provides an SQL
+    statement that will set the attendee state to ACTIVE for rows
+    in the attendee table with the given userID and seriesID when
+    the current state for the row is not ACTIVE and the instance ID
+    for the row is such that there is a corresponding row in the
+    series-instance table with the given series ID and this instance ID.
+    This handles the case where an existing entry was cancelled and the
+    series then reapplied.
+  <LI><B>applySeries3</B>. This property provides an SQL
+    statement that will add a new row to the attendee table with the
+    specified userID and series ID for all matching instances in the
+    series-instance table provided that such a row does not already
+    exist.
+  <LI><B>userfields</B>. This property provides an SQL
+    statement that will produce a row set whose columns are
+    fullName, emailAddr, countryPrefix, cellNumber, and carrierID for
+    a specified user ID. The rows are obtained from the user-info table
+    with the full name set to the concatenation (separated by a space)
+    of the first and last names, with the name order determined by the
+    value in the lastNameFirst column.
+  <LI><B>calendarData</B>. This property provides a format string for
+    an SQL statement that will produce a row set containing the
+    columns userID, ownerID, locationID, instanceID, uid, summary,
+    idomain, description, preEventType, preEventOffset, startDate,
+    startTime, endDate, endTime, emailSeqno, phoneSeqno, location,
+    attendingPreEvent, modtimeO, modtimeL, modtimeE, modTimeL, modtimeA
+    createTime, lastEmailTime, lastPhoneTime. The format string contains
+    "%s", which will be replaced with a boolean SQL expression  and that
+    ends with the token AND.  This boolean expression can use the following
+    alias for tables: utbl for the user table, o table for the owner table,
+    etable for the event table, itbl for the event-instance table, ltbl
+    for the location table, and atbl for the attendee table.
+    The createTime column is taken from the attendee table and the
+    uid column is the concatenation of utbl.uid, otbl.createTime, etable.
+    createTime, and itbl.createTime.  The column idomain is taken from
+    the owner table. For the modtime columns, the last characters
+    O, L, E, I, and A refer to the owner table, the location table, the
+    event table, the instance table, and the attendee table respectively.
+  <LI><B>calFirstAlarm</B>. This property provides an SQL
+    statement that will produce a row set whose columns are eventTime,
+    alarmTime, forEmail, forPhone, modTime given values in the userID,
+    ownerID, location ID, weekday columns.
+  <LI><B>calSecondAlarm</B>. This property provides an SQL
+    statement that will produce a row set whose columns are offset,
+    forEmail, forPhone, and modTime given values in the userID, ownerID
+    and locationID columns.
+  <LI><B>nonAttendees</B>. This property provides a format string for
+    an SQL statement that will produce a row set whose single column
+    is named userID, and that lists users who are not in a select
+    statement that selects users that satisfy constraints provided by
+    a WHERE clause.  The "%s" directive in the format string follows
+    the token WHERE and must end in the token AND.  It can use the
+    aliases utbl, otbl, etbl, itbl, and atbl that refer to the
+    user-info table, the owner table, the event table, the
+    event-instance table and the attendee table
+    respectively. Additional constraints require that rows from these
+    tables share the same instance ID, event ID, and owner ID when
+    those columns are in multiple tables, and also that the starting
+    date for an event instance is less than the current date.
+  <LI><B>getInstanceCount</B>. This property provides a format string
+    for an SQL statement that will count the number of instance IDs in
+    the attendee table given some constraints.  The constraints are
+    substituted for "%s" in the format string and must be boolean SQL
+    expressions that end with the token "AND". The SQL statement supplies
+    the aliases atbl, itbl, etbl, otbl, and ltbl for the attendee table,
+    the event-instance table, the event table, the owner table, and the
+    location table respectively.
+</UL>
+
+</BODY>
+</HTML>
+
+<!--  LocalWords:  ECDB iCalendar SMS FK JDBC boolean init addUser
+ -->
+<!--  LocalWords:  sqlShutdownState initForAuth initForRoles hasRoles
+ -->
+<!--  LocalWords:  hasSchemas schemas ECDB's addCountryPrefixes pre
+ -->
+<!--  LocalWords:  CountryPrefixes initialCarriers initialCarrierMap
+ -->
+<!--  LocalWords:  CarrierMap theSchema setselectFormat listCarriers
+ -->
+<!--  LocalWords:  listCarrier listCarriersMatching addCarrier userID
+ -->
+<!--  LocalWords:  findCarrier deleteCarrierByID updateCarrier rowset
+ -->
+<!--  LocalWords:  deleteCarrierMatching addToCarrierMap idomain tbli
+ -->
+<!--  LocalWords:  countryPrefix carrierID updateCarrierDomain tble
+ -->
+<!--  LocalWords:  deleteFromCarrierMap sortedCarrierMap mapping's
+ -->
+<!--  LocalWords:  findCarrierMap findCarrierMapByID insertUserInfo
+ -->
+<!--  LocalWords:  getCarrierMapDomain addCellPhoneEmail setUserData
+ -->
+<!--  LocalWords:  updateCellPhoneEmail deleteCellPhoneEmail lastName
+ -->
+<!--  LocalWords:  getCellPhoneEmail deleteUserInfoByID firstName uid
+ -->
+<!--  LocalWords:  getUserInfoData getUserInfoDataForKeymap emailAddr
+ -->
+<!--  LocalWords:  lastNameFirst findUserInfo listUserInfo cellNumber
+ -->
+<!--  LocalWords:  CANCELLED listUserInfoForID listUserInfoMatching
+ -->
+<!--  LocalWords:  listUserInfoMatchingCell findUserInfoMatching stbl
+ -->
+<!--  LocalWords:  listUserInfoMatchingIntlCell insertOwner ownerID
+ -->
+<!--  LocalWords:  findUserInfoMatchingCell deleteOwnerByID eventTime
+ -->
+<!--  LocalWords:  findUserInfoMatchingIntlCell listOwners locationID
+ -->
+<!--  LocalWords:  listOwnersMatching listOwnersByID setOwnerData
+ -->
+<!--  LocalWords:  getOwnerData findOwnerMatching insertLocation etbl
+ -->
+<!--  LocalWords:  deleteLocationByID listLocations listLocationsByID
+ -->
+<!--  LocalWords:  listLocationsMatching setLocationData alarmTime
+ -->
+<!--  LocalWords:  getLocationData findLocationMatching forEmail itbl
+ -->
+<!--  LocalWords:  insertFirstAlarm forPhone deleteFirstAlarm eventID
+ -->
+<!--  LocalWords:  firstAlarm listFirstALarms setFirstAlarmData
+ -->
+<!--  LocalWords:  insertSecondAlarm listSecondAlarm setSecondAlarm
+ -->
+<!--  LocalWords:  deleteSecondAlarm deleteSecondAlarms insertEvent
+ -->
+<!--  LocalWords:  insertPreEventDefault listPreEventDefaults endDate
+ -->
+<!--  LocalWords:  getPreEventDefault deletePreEventDefault startDate
+ -->
+<!--  LocalWords:  setPreEventDefault deleteEventByID listEvents utbl
+ -->
+<!--  LocalWords:  listEventsForOwner listEventsMatching setEventData
+ -->
+<!--  LocalWords:  listEventsByID getEventData findEventMatching ltbl
+ -->
+<!--  LocalWords:  insertEventInstance preEventType preEventOffset
+ -->
+<!--  LocalWords:  startTime endTime deleteEventInstanceByID seriesID
+ -->
+<!--  LocalWords:  instanceID deleteCanceledEventInstances listSeries
+ -->
+<!--  LocalWords:  setEventInstanceData listEventInstance setSeries
+ -->
+<!--  LocalWords:  listEventInstances listEventInstancesMatching atbl
+ -->
+<!--  LocalWords:  findEventInstancesMatching insertSeries cancelled
+ -->
+<!--  LocalWords:  deleteSeriesByID listSeriesByID listSeriesInstance
+ -->
+<!--  LocalWords:  insertSeriesInstance deleteSeriesInstance fullName
+ -->
+<!--  LocalWords:  listSeriesInstanceByOwner insertAttendee modtimeO
+ -->
+<!--  LocalWords:  attendingPreEvent deleteAttendee listAttendees
+ -->
+<!--  LocalWords:  setAttendeeData getLastEmailTime lastEmailTime
+ -->
+<!--  LocalWords:  getLastPhoneTime lastPhoneTime applySeries etable
+ -->
+<!--  LocalWords:  userfields calendarData emailSeqno phoneSeqno otbl
+ -->
+<!--  LocalWords:  modtimeL modtimeE modTimeL modtimeA createTime
+ -->
+<!--  LocalWords:  itbl modtime calFirstAlarm modTime nonAttendees
+ -->
+<!--  LocalWords:  calSecondAlarm getInstanceCount
+ -->

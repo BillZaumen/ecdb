@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<HTML>
+<BODY>
+<B>The ECDB class library</B>
+<P>
+  This software provides a module and a package, both named
+org.bzdev.ecdb, that provides an API for initializing and manipulating
+a relational database representing an event calendar. In addition to
+methods that select, insert, update, or delete table entries, instances
+of {@link org.bzdev.ecdb.ECDB} can generate
+<A HREF="https://tools.ietf.org/html/rfc5545">iCalendar</A>
+appointments and send them via email.
+<P>
+  There are two additional modules:
+<UL>
+  <LI><B>org.bzdev.ecdb.dryrun</B>. This module implements the email SPI
+    (Service Provider Interface), and shows the messages that would be
+    sent by displaying the messages in a browser as a series of HTML
+    pages.
+  <LI><B>org.bzdev.ecdb.javamail</B>. This module allows the java.mail
+    module, whose JAR file is javax.mail.jar, to be used. The  java.mail
+    module in turn requires the java.activation module, whose jar file
+    is javax.activation.jar.
+</UL>
+These are not documented because they provide
+org.bzdev.ecdb.SMTPAgentSPI.  One may also add modules that provide
+org.bzdev.ecdb.CellEmailFinderSPI, which is used to map a cell phone
+number (including the country prefix) to the email address for an
+email to SMS gateway. ECDB does not provide an implementation of this
+SPI: there are Internet-based services that can provide this function
+but they are proprietary and typically charge for the use of this
+service (some allow free interactive use but use captchas), and may
+change at any time.
+<P>
+  Please see <A HREF="doc-files/description.html">the description</A>
+for a more detailed description.
+</BODY>
+</HTML>
+
+<!--  LocalWords:  ECDB iCalendar SPI SMS captchas
+ -->

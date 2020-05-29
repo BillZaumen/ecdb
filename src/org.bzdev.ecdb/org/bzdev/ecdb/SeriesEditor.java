@@ -6,6 +6,8 @@ import javax.swing.*;
 
 /**
  * Table Cell editor for ECDB series.
+ * This editor edits cells whose values are instances of
+ * {@link ECDB.SeriesLabeledID}.
  */
 public class SeriesEditor extends DefaultCellEditor {
 

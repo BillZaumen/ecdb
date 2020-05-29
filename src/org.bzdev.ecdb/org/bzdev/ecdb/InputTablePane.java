@@ -11,6 +11,20 @@ import javax.swing.table.*;
 
 /**
  * Table pane for inputing data.
+ * This class creates a JPanel containing a JTable plus some controls.
+ * The class {@link InputTablePane.ColSpec} specifies each column in
+ * the table, indicating a title, how the cells in the column are rendered,
+ * and how the cells in the column are edited (a null editor indicates that
+ * the column is a read-only column).
+ * <P>
+ * There are methods for determining the number of rows and columns in the
+ * table and for obtaining the values at any given cell, and to create
+ * dialog boxes containing this panel or a new instance of this panel.
+ * <P>
+ * The table model for this panel's table is initialized by providing a
+ * {@link java.util.Vector} whose type is
+ * Vector&lt;Vector&lt;Object&gt;&gt;, with the Vector&lt;Object&gt;
+ * representing the rows.
  */
 public class InputTablePane extends JPanel {
 
@@ -50,11 +64,19 @@ public class InputTablePane extends JPanel {
 
 	/**
 	 * Constructor.
+	 * <P>
+	 * Note: if one explicitly sets the trc argument to
+	 * {@link DefaultTableCellRenderer}, {@link javax.swing.JTable}
+	 * implementation will render boolean values as strings not as
+	 * checkboxes. As a general rule, one should set the tcr argument
+	 * to specify a specific table cell renderer to use when the default
+	 * behavior is not wanted.
 	 * @param heading the table heading
 	 * @param example, sample text to compute the column width
 	 * @param clasz the class for the data in this column
 	 * @param tcr the table-cell renderer used to render a cell in the
-	 *        column
+	 *        column; null for the {@link javax.swing.JTable} default
+	 *        redenderer
 	 * @param tce the table-cell editor used to edit a cell in the table;
 	 *        null if the column is not editable
 	 */
@@ -106,7 +128,7 @@ public class InputTablePane extends JPanel {
 	this(colspec, Math.max(rows.size(), 1), rows, canAdd, canDel, canMove);
     }
 
-    private JTable table;
+    /*private*/ JTable table;
 
     /**
      * Constructor with explicitly provided rows, possibly followed by
@@ -183,7 +205,9 @@ public class InputTablePane extends JPanel {
 	TableColumnModel tcm = table.getColumnModel();
 	for (int i = 0; i < colspec.length; i++) {
 	    TableColumn tc = tcm.getColumn(i);
-	    tc.setCellRenderer(colspec[i].tcr);
+	    if (colspec[i].tcr != null) {
+		tc.setCellRenderer(colspec[i].tcr);
+	    }
 	    tc.setCellEditor(colspec[i].tce);
 	    twidth += configColumn(table, i, colspec[i].heading,
 				   colspec[i].example);
@@ -437,8 +461,8 @@ public class InputTablePane extends JPanel {
      * @param parent the component on which to center the dialog
      * @param title the title of the dialog
      * @param ipane the InputTablePane to display
-     * @return {@link InputTablePane.OK} if the input is accepted;
-     *        {@link InputTablePane.CANCEL} if the input is cancelled
+     * @return {@link InputTablePane#OK} if the input is accepted;
+     *        {@link InputTablePane#CANCEL} if the input is cancelled
      */
     public static int showDialog(Component parent, String title,
 				       InputTablePane ipane)

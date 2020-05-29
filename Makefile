@@ -14,6 +14,8 @@ DESTDIR :=
 
 JROOT := $(shell while [ ! -d src -a `pwd` != / ] ; do cd .. ; done ; pwd)
 
+JAVA_VERSION = 11
+
 include VersionVars.mk
 
 APPS_DIR = apps
@@ -24,7 +26,9 @@ MIMETYPES_DIR = mimetypes
 #
 SYS_BIN = /usr/bin
 SYS_MANDIR = /usr/share/man
-SYS_DOCDIR = /usr/share/doc/ecdb
+SYS_DOCDIR = /usr/share/doc/ecdb-java
+SYS_API_DOCDIR = /usr/share/doc/ecdb-doc
+SYS_JAVADOCS = $(SYS_API_DOCDIR)/api
 SYS_MIMEDIR = /usr/share/mime
 SYS_APPDIR = /usr/share/applications
 SYS_ICON_DIR = /usr/share/icons/hicolor
@@ -49,6 +53,8 @@ JARDIR=$(shell echo $(SYS_JARDIRECTORY) | sed  s/\\//\\\\\\\\\\//g)
 BIN = $(DESTDIR)$(SYS_BIN)
 MANDIR = $(DESTDIR)$(SYS_MANDIR)
 DOCDIR = $(DESTDIR)$(SYS_DOCDIR)
+API_DOCDIR = $(DESTDIR)$(SYS_API_DOCDIR)
+JAVADOCS = $(DESTDIR)$(SYS_JAVADOCS)
 MIMEDIR = $(DESTDIR)$(SYS_MIMEDIR)
 APPDIR = $(DESTDIR)$(SYS_APPDIR)
 MIME_ICON_DIR = $(DESTDIR)$(SYS_MIME_ICON_DIR)
@@ -64,8 +70,11 @@ ICON_DIR = $(DESTDIR)$(SYS_ICON_DIR)
 # Installed name of the icon to use for the ECDB application
 #
 SOURCEICON = icons/ecdb.svg
+SOURCE_FILE_ICON = icons/ecdbconfig.svg
 TARGETICON = ecdb.svg
 TARGETICON_PNG = ecdb.png
+TARGET_FILE_ICON = application-x.ecdb-config.svg
+TARGET_FILE_ICON_PNG = application-x.ecdb-config.png
 
 JROOT_DOCDIR = $(JROOT)$(SYS_DOCDIR)
 JROOT_JARDIR = $(JROOT)/BUILD
@@ -84,8 +93,10 @@ EXTLIBS = $(SYS_BZDEVDIR):$(EXTLIBS1):$(EXTLIBS2)
 
 MANS = $(JROOT_MANDIR)/man1/ecdb.1.gz $(JROOT_MANDIR)/man5/ecdb.5.gz
 
-ICONS = $(SOURCEICON) $(SOURCE_FILE_ICON) $(SOURCE_CFILE_ICON) \
-	$(SOURCE_TCFILE_ICON)
+ICONS = $(SOURCEICON) $(SOURCE_FILE_ICON)
+
+ECDB_SDIR = src/org.bzdev.ecdb
+ECDB_JSDIR = $(ECDB_SDIR)/org/bzdev/ecdb
 
 ECDB_DIR = mods/org.bzdev.ecdb
 ECDB_JDIR = $(ECDB_DIR)/org/bzdev/ecdb
@@ -114,6 +125,8 @@ ALL = $(PROGRAM) $(JROOT_JARDIR)/ecdb-javamail.jar \
 
 # program: $(JROOT_BIN)/ecdb $(JROOT_JARDIR)/ecdb-$(VERSION).jar
 
+all: $(ALL)
+
 program: clean all
 
 #
@@ -123,7 +136,6 @@ program: clean all
 testversion:
 	make program EXTDIR=$(JROOT_JARDIR)
 
-all: $(ALL)
 
 #
 # Use this to set up the links to the libraries for the jar subdirectory
@@ -152,13 +164,15 @@ provider:
 	ln -s ../src/org.bzdev.ecdb.dryrun/org/bzdev/ecdb/dryrun \
 		provider/dryrun
 
-setup: $(JROOT_JARDIR)/libbzdev-base.jar \
+SETUP = $(JROOT_JARDIR)/libbzdev-base.jar \
 	$(JROOT_JARDIR)/libbzdev-desktop.jar \
 	$(JROOT_JARDIR)/libbzdev-ejws.jar \
 	$(JROOT_JARDIR)/libbzdev-obnaming.jar \
 	$(JROOT_JARDIR)/javax.mail.jar \
 	$(JROOT_JARDIR)/javax.activation.jar \
 	$(JROOT_JARDIR)/derby.jar \
+
+setup: $(SETUP)
 
 $(JROOT_JARDIR)/libbzdev-base.jar:
 	(cd $(JROOT_JARDIR); ln -s $(SYS_BZDEVDIR)/libbzdev-base.jar . )
@@ -182,11 +196,35 @@ $(JROOT_JARDIR)/derby.jar:
 	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)/derby.jar . )
 
 
+DIAGRAMS = $(ECDB_JSDIR)/doc-files/attendees.png \
+	$(ECDB_JSDIR)/doc-files/owner.png \
+	$(ECDB_JSDIR)/doc-files/timing.png \
+	$(ECDB_JSDIR)/doc-files/user.png
+
+diagrams: $(DIAGRAMS)
+
+$(ECDB_JSDIR)/doc-files/attendees.png: diagrams/attendees.dia
+	mkdir -p $(ECDB_SDIR)/org/bzdev/ecdb/doc-files
+	dia -s 700x -e $@ $<
+
+$(ECDB_JSDIR)/doc-files/owner.png: diagrams/owner.dia
+	mkdir -p $(ECDB_SDIR)/org/bzdev/ecdb/doc-files
+	dia -s 700x -e $@ $<
+
+$(ECDB_JSDIR)/doc-files/timing.png: diagrams/timing.dia
+	mkdir -p $(ECDB_SDIR)/org/bzdev/ecdb/doc-files
+	dia -s 700x -e $@ $<
+
+$(ECDB_JSDIR)/doc-files/user.png: diagrams/user.dia
+	mkdir -p $(ECDB_SDIR)/org/bzdev/ecdb/doc-files
+	dia -s 700x -e $@ $<
+
+
 # The action for this rule removes all the ecdb-*.jar files
 # because the old ones would otherwise still be there and end up
 # being installed.
 #
-$(JROOT_JARDIR)/ecdb.jar: $(FILES) $(PROPERTIES) $(RESOURCES) setup 
+$(JROOT_JARDIR)/ecdb.jar: $(FILES) $(PROPERTIES) $(RESOURCES) $(SETUP)
 	rm -f $(JROOT_JARDIR)/ecdb.jar
 	mkdir -p $(ECDB_JDIR)
 	javac -Xlint:unchecked -Xlint:deprecation \
@@ -251,19 +289,71 @@ $(JROOT_MANDIR)/man5/ecdb.5.gz: ecdb.5
 
 clean:
 	rm -fr mods
-	rm -f $(JROOT_JARDIR)/ecdb.jar \
+	rm -f $(JROOT_JARDIR)/ecdb.jar
 
+#
+# ------------------  JAVADOCS -------------------
+#
+JROOT_JAVADOCS = $(JROOT)/BUILD/api
+
+jdclean:
+	rm -rf BUILD/api
+
+javadocs: $(JROOT_JAVADOCS)/index.html
+
+JDOC_MODULES= org.bzdev.ecdb
+
+$(JROOT_JAVADOCS)/index.html: $(JROOT_JARDIR)/ecdb.jar $(DIAGRAMS) \
+		$(ECDB_JSDIR)/doc-files/description.html \
+		src/overview.html src/description.html
+	rm -rf $(JROOT_JAVADOCS)
+	mkdir -p $(JROOT_JAVADOCS)
+	javadoc -d $(JROOT_JAVADOCS) --module-path BUILD \
+		--module-source-path src \
+		--add-modules $(JDOC_MODULES) \
+		-link file:///usr/share/doc/openjdk-$(JAVA_VERSION)-doc/api \
+		-link file:///usr/share/doc/libbzdev-doc/api \
+		-overview src/overview.html \
+		--module $(JDOC_MODULES) | grep -E -v -e '^Generating' \
+		| grep -E -v -e '^Copying file'
+	mkdir -p $(JROOT_JAVADOCS)/doc-files
+	cp src/description.html $(JROOT_JAVADOCS)/doc-files/description.html
+	cp src/org.bzdev.ecdb/org/bzdev/ecdb/sql.xml \
+		$(JROOT_JAVADOCS)/doc-files/sql.xml.txt
+	for i in $(MOD_IMAGES) ; \
+	    do cp src/doc-files/$$i $(JROOT_JAVADOCS)/doc-files ; done
+
+
+#
+# ---------------------INSTALL -------------------
+#
 install: all
-	install -d $(APP_ICON_DIR)
-	install -d $(MIME_ICON_DIR)
-	install -d $(MIMEDIR)
-	install -d $(MIMEDIR)/packages
-	install -d $(APPDIR)
 	install -d $(BIN)
 	install -d $(MANDIR)
 	install -d $(BZDEVDIR)
 	install -d $(MANDIR)/man1
 	install -d $(MANDIR)/man5
+	install -m 0644 $(JROOT_JARDIR)/ecdb.jar $(BZDEVDIR)
+	install -m 0755 $(JROOT_BIN)/ecdb $(BIN)
+	install -m 0644 $(JROOT_MANDIR)/man1/ecdb.1.gz $(MANDIR)/man1
+	install -m 0644 $(JROOT_MANDIR)/man5/ecdb.5.gz $(MANDIR)/man5
+
+install-doc: $(JROOT_JAVADOCS)/index.html
+	install -d $(API_DOCDIR)
+	install -d $(JAVADOCS)
+	for i in `cd $(JROOT_JAVADOCS); find . -type d -print ` ; \
+		do install -d $(JAVADOCS)/$$i ; done
+	for i in `cd $(JROOT_JAVADOCS); find . -type f -print ` ; \
+		do j=`dirname $$i`; install -m 0644 $(JROOT_JAVADOCS)/$$i \
+			$(JAVADOCS)/$$j ; \
+		done
+
+install-desktop: all
+	install -d $(APP_ICON_DIR)
+	install -d $(MIME_ICON_DIR)
+	install -d $(MIMEDIR)
+	install -d $(MIMEDIR)/packages
+	install -d $(APPDIR)
 	install -m 0644 -T $(SOURCEICON) $(APP_ICON_DIR)/$(TARGETICON)
 	for i in $(ICON_WIDTHS) ; do \
 		install -d $(ICON_DIR)/$${i}x$${i}/$(APPS_DIR) ; \
@@ -275,10 +365,6 @@ install: all
 	install -m 0644 -T mime/ecdb.xml $(MIMEDIR)/packages/ecdb.xml
 	install -m 0644 -T $(SOURCE_FILE_ICON) \
 		$(MIME_ICON_DIR)/$(TARGET_FILE_ICON)
-	install -m 0644 -T $(SOURCE_CFILE_ICON) \
-		$(MIME_ICON_DIR)/$(TARGET_CFILE_ICON)
-	install -m 0644 -T $(SOURCE_TCFILE_ICON) \
-		$(MIME_ICON_DIR)/$(TARGET_TCFILE_ICON)
 	for i in $(ICON_WIDTHS) ; do \
 	    install -d $(ICON_DIR)/$${i}x$${i}/$(MIMETYPES_DIR) ; \
 	done;
@@ -287,26 +373,8 @@ install: all
 	  install -m 0644 -T tmp.png \
 	  $(ICON_DIR)/$${i}x$${i}/$(MIMETYPES_DIR)/$(TARGET_FILE_ICON_PNG); \
 	  rm tmp.png ; \
-	  inkscape -w $$i -e tmp.png $(SOURCE_CFILE_ICON) ; \
-	  install -m 0644 -T tmp.png \
-	  $(ICON_DIR)/$${i}x$${i}/$(MIMETYPES_DIR)/$(TARGET_CFILE_ICON_PNG); \
-	  inkscape -w $$i -e tmp.png $(SOURCE_TCFILE_ICON) ; \
-	  install -m 0644 -T tmp.png \
-	  $(ICON_DIR)/$${i}x$${i}/$(MIMETYPES_DIR)/$(TARGET_TCFILE_ICON_PNG); \
-	  rm tmp.png ; \
 	done
-	install -m 0644 $(JROOT_JARDIR)/ecdb.jar $(BZDEVDIR)
-	install -m 0644 $(JROOT_JARDIR)/ecdb.policy $(BZDEVDIR)
-	install -m 0755 $(JROOT_BIN)/ecdb $(BIN)
 	install -m 0644 ecdb.desktop $(APPDIR)
-	install -m 0644 $(JROOT_MANDIR)/man1/ecdb.1.gz $(MANDIR)/man1
-	install -m 0644 $(JROOT_MANDIR)/man5/ecdb.5.gz $(MANDIR)/man5
-
-install-links:
-	for i in base desktop ejws ; do
-	 [ -h $(BZDEVDIR)/libbzdev-$$i.jar ] || \
-		ln -s $(EXTDIR)/libbzdev-$$i.jar $(BZDEVDIR)/libbzdev-$$i.jar; \
-	done
 
 uninstall:
 	@rm $(MANDIR)/man1/ecdb.1.gz || echo ... rm ecdb.1.gz  FAILED

@@ -6,6 +6,8 @@ import javax.swing.*;
 
 /**
  * Table-cell editor for ECDB owners.
+ * The owner is represented by an OwnerLabeldID, which includes both
+ * the ownerID and a label.
  */
 public class OwnerEditor extends DefaultCellEditor {
 

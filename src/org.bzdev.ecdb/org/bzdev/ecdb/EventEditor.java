@@ -6,6 +6,9 @@ import javax.swing.*;
 
 /**
  * Table-cell editor for ECDB events.
+ * The events are represented as instances of the class
+ * {@link ECDB.EventLabeledID}. Each instance includes both an eventID
+ * and a label.
  */
 public class EventEditor extends DefaultCellEditor {
 

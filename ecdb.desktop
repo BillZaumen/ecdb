@@ -1,0 +1,17 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=ECDB
+GenericName=Event-Calendar Database
+Comment=Use an even-calendar databse
+Exec=ecdb %f
+TryExec=ecdb
+MimeType=application/x.ecdb-config
+Terminal=false
+Type=Application
+Icon=/usr/share/icons/hicolor/scalable/apps/ecdb.svg
+Categories=Application;Graphics;
+StartupNotify=true
+Actions=config
+[Desktop Action config]
+Name = New ECDB Configuration
+Exec=ecdb --configure

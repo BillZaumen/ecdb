@@ -3,138 +3,15 @@
 <properties> 
   <comment><![CDATA[
     SQL statements for setting up schemas and tables.  Each  key names
-    a particular SQL statement (or statements) and a database - SQL is
-    not implemented consistently.
-    
-    The requirements for properties beginning with "table." are:
+    a particular SQL statement (or statements) and optionally a database.
+    When a statement is looked up, the full name (SQL_KEY.DATABASE_KEY)
+    will be tried first.  If there is no match, just SQL_KEY will be
+    tried.  If there are null matches, the look-up returns null.
 
-      * A schema named ECSCHEMA (the schema name will be changed to
-        a user-specified one when this properties file is loaded). The
-	tables in this schema contain columns that can be modified
-	as desired with one exception: the column 'domain'
-	in the table DATASCHEMA.Owner cannot be changed after a row
-	is inserted. Attempts to change it will fail. The Derby-specific
-	SQL enforces this using a trigger (the trigger is invoked recursively
-	but there is a Derby-imposed depth limit of 16 that stops the
-	recursion).
-
-      * A schema named CNTRLSCHEMA (the schema name will be changed to
-        a user-specified one when this properties file is loaded).
-	The tables in this schema contain columns (e.g., modTime) that
-	are maintained through the use of triggers.
-
-      * A table named EventCal.Domain used to store the domain names
-       of gateways that relay email messages. When the email address
-       <PHONE_NUMBER>;<CARRIER_DOMAIN> is used for a suitable choice
-       of <CARRIER_DOMAIN>, the email will be converted to an mms
-       message. The phone number must usually be one using the wireless
-       carrier's service. The columns are as follows.
-	    - DOMAINID an ID for each entry.
-	    - DOMAIN is the domain name to use in an email address
-	      with a phone number as a user name
-	    - CARRIER is the name of the wireless carrier (e.g., ATT
-	      or Verizon) and may be null if the carrier is not known
-	While one can find services that will forward the email or
-        look up the carrier given the email, there is typically a charge
-        to use such services.
-      * A table named EventCal.UserInfo that assigns a unique ID
-	to each user and allows one to look up the user's first name,
-	last name, email address, a semiprivate string used as a
-	component of an iCalendar UID field, and a status field that
-	indicates if a user is active or not. The columns are as
-	follows.
-
-        -  USERID is a unique ID for each user (i.e., for each row in this
-	   table).
-	- FIRSTNAME is the user's first name.
-	- LASTNAME is the user's last name.
-	- EMAIL address is the user's email address (null if there is none).
-	- CELLNUMBER is the user's cell phone number (null if there is none).
-	- CARRIER is the name of the user's wireless carrier (e.g., ATT or
-          Verizon).
-	- UID is a portion of a unique identifier specific to a given user.
-	- STATUS is a string with the values ACTIVE, NOTACTIVE, or CANCELLED.
-
-      * A table named EventCal.Owner. An owner denotes both an organization,
-	a general type of event, and a location. The columns are as follows.
-	- OWNERID is a unique ID for each owner (i.e., for each row in this
-	  table).
-	- SUMMARY is the summary text for an iCalendar event naming a
-	  general class of events.
-	- DOMAIN is a domain name associated with the owner and used in
-          generating iCalendar UID fields.   
-
-      * A table named EventCal.Location that lists event locations.
-        The columns are the following.
-	- LOCATIONID is a unique identifier (an integer) that is the
-          primary key for the table.
-	- LOCATION is a string giving the name of the location.
-
-      * A table named EventCal.FirstAlarm used to determine the 
-        first-alarm times for a user given a specified
-	starting date and time and the event owner.  The columns are 
-        as follows:
-	- USERID is the userID in the User table for a specific user.
-	- OWNERID is the owner ID to denote the general class of events.
-	- EVENTTIME is the time of day an event starts.
-	- ALARMTIME is thetime at which an alarm should trigger.
-	- WEEKDAY is TRUE if the event is on a weekday and FALSE for a weekend.
-	- FOREMAIL is TRUE if the alarm is appropriate for email and FALSE
-          otherwise.
-	- FORPHONE isTRUE if the alarm is appropriate for a phone and FALSE
-          otherwise.
-
-      * A table named EventCal.SecondAlarm used to determine the 
-	second-alarm times for an event. The columns are as follows:
-	- USERID the userID in the User table for a specific user.
-	- OWNERID the owner ID to denote the general class of events.
-	- OFFSET the offset for the alarm in minutes from the start of an event.
-	- FOREMAIL is TRUE if the alarm is appropriate for email and FALSE
-	  otherwise.
-	- FORPHONE is TRUE if the alarm is appropriate for a phone and FALSE
-	  otherwise.
-
-      * A table named EventCal.Event. This contains common data for 
-	a sequence of possibly repeating events that share a common
-	description and owner.The columns are as follows:
-	- EVENTID is a unique id for each event  (i.e., for each row in this
-	  table)
-	- OWNERID is the owner ID to denote the general class of events.
-	- DESCRIPTION is a description of this event (typically a title).
-	- CREATETIME is the time at which this event was created.
-	- MODTIME is the last time at which this event was modified.
-
-      * A table named EventCal.Instance that describes instances of an
-        event - basically repetitions of the same event at differing times.
-	Its columns are as follows:
-	- INSTID is a unique id for each instance  (i.e., for each row in
-	  this  table).
-	- EVENTID the unique ID for the event (the primary key for a row
-	  in the event table).
-	- SEQNO is a monotonically increasing sequence number, incremented
-	  each time a row is updated.
-	- STARTDATE the date at which this instance of the event starts.
-	- STARTTIME the time of day at which this instance of the event starts.
-	- ENDDATE the date at which this instance of the event ends.
-	- ENDTIME the time of day at which this instance of the event ends.
-	- MODTIME the last date/time at which this event was modified.
-	- UID a portion of the iCalendar UID field associated with this instance
-          of the event.
-
-      * A table named EventCal.Attendee for users attending an instance
-        of an event. The columns are as follows:
-	- USERID is the unique ID referencing a row in the User table.
-	- INSTANCEID is the unique ID referencing a row in the Instance table.
-	- EMAILSEQNO is the last sequence number used in an email message about
-	  this event.
-	- PHONESEQNO is the last sequence number used in a MMS message about
-	  this event.
-	- MODTIME is the last time at which this entry was modified
-	- STATE is one of ACTIVE, CANCELLING, or CANCELLED
-
+    ECDB will susbstitute the actual schema name as a replacement
+    for the string ECSCHEMA when each key is read.
 ]]>
   </comment>
-<!-- "'" (to balance single quotes in case emacs SQL mode is used) -->
   <entry key="sqlShutdownState"></entry>
   <entry key="sqlShutdownState.derby">XJ015, 08006</entry>
   <entry key="init"></entry>
@@ -322,7 +199,7 @@ CREATE TRIGGER ECSCHEMA.ownerTrigger1 AFTER UPDATE OF summary, idomain
 
 CREATE TABLE ECSCHEMA.PreEventDefault(userID INT NOT NULL,
        	     				ownerID INT NOT NULL,
-					useDefault BOOLEAN NOT NULL
+					attend BOOLEAN NOT NULL
 					   DEFAULT FALSE,
 					CONSTRAINT preEventDefault_pk
 					    PRIMARY KEY (userID, ownerID),
@@ -585,7 +462,7 @@ CREATE TRIGGER ECSCHEMA.attendeeTrigger1 AFTER INSERT
 CREATE TRIGGER ECSCHEMA.attendeeTrigger2 AFTER INSERT
        ON ECSCHEMA.Attendee Referencing NEW AS atbl
        FOR EACH ROW UPDATE ECSCHEMA.Attendee
-       	   SET attendingPreEvent = (SELECT useDefault
+           SET attendingPreEvent = (SELECT attend
 		 FROM ECSCHEMA.PreEventDefault
 		 WHERE userID = atbl.userID
 			AND ownerID = (SELECT ownerID FROM ECSCHEMA.EVENT
@@ -892,7 +769,6 @@ SELECT countryPrefix, tbla.carrierID, carrier, idomain
 ]]>
   </entry>
 
-
   <entry key="getCarrierMapDomain"><![CDATA[
 SELECT idomain FROM ECSCHEMA.CarrierMap
     WHERE  countryPrefix = ? AND carrierID = ?
@@ -950,8 +826,6 @@ SELECT * FROM ECSCHEMA.UserInfo Where userID = ?
 SELECT firstName, lastName, lastNameFirst, title  FROM ECSCHEMA.UserInfo Where userID = ?
 ]]>
   </entry>
-  
-
 
   <entry key="findUserInfo"><![CDATA[
 SELECT userID FROM ECSCHEMA.UserInfo
@@ -1183,19 +1057,19 @@ UPDATE  ECSCHEMA.SecondAlarm SET %s
 
   <entry key="insertPreEventDefault"><![CDATA[
 INSERT INTO ECSCHEMA.PreEventDefault
-	(userID, ownerID, useDefault)
+	(userID, ownerID, attend)
 	VALUES (?, ?, ?)
 ]]>
   </entry>
 
   <entry key="listPreEventDefaults"><![CDATA[
-SELECT userID, ownerID, useDefault
+SELECT userID, ownerID, attend
     FROM ECSCHEMA.PreEventDefault WHERE  userID = ?%s
 ]]>
   </entry>
 
   <entry key="getPreEventDefault"><![CDATA[
-SELECT useDefault FROM ECSCHEMA.PreEventDefault
+SELECT attend FROM ECSCHEMA.PreEventDefault
     WHERE userID = ? AND ownerID = ?
 ]]>
   </entry>
@@ -1213,7 +1087,7 @@ DELETE FROM ECSCHEMA.PreEventDefault
   </entry>
 
   <entry key="setPreEventDefault"><![CDATA[
-UPDATE  ECSCHEMA.PreEventDefault SET useDefault = ?
+UPDATE  ECSCHEMA.PreEventDefault SET attend = ?
 	WHERE userID = ? AND ownerID = ?
 ]]>
   </entry>

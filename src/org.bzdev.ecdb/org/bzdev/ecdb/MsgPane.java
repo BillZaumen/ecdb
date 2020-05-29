@@ -13,7 +13,7 @@ import javax.swing.event.*;
 import javax.swing.filechooser.*;
 import javax.swing.table.*;
 
-public class MsgPane extends InputTablePane {
+class MsgPane extends InputTablePane {
 
     static class MsgPropertyEditor extends AbstractCellEditor
 	implements TableCellEditor, ActionListener

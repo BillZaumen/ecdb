@@ -22,6 +22,51 @@ import org.bzdev.util.CopyUtilities;
 
 class Support {
 
+    static java.util.List<Image> iconList = new LinkedList<Image>();
+
+    public static java.util.List<Image> getIconList() {
+        return iconList;
+    }
+
+    static {
+	try {
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon16.png")
+                                     ))).getImage());
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon24.png")
+                                     ))).getImage());
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon32.png")
+                                     ))).getImage());
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon48.png")
+                                     ))).getImage());
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon64.png")
+                                     ))).getImage());
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon96.png")
+                                     ))).getImage());
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon128.png")
+                                     ))).getImage());
+            iconList.add((new
+                          ImageIcon((Support.class
+                                     .getResource("webnail/webnailicon256.png")
+                                     ))).getImage());
+        } catch (Exception e) {
+            System.err.println("initialization failed - "
+			       + "missing icon for iconList");
+        }
+    }
     static final Charset UTF8 = ECDB.UTF8;
     static Properties properties = new Properties();
     static File file = null;
@@ -791,6 +836,7 @@ class Support {
 		fileMenu.add(menuItem);
 
 		frame = new JFrame("ECDB Configuration File");
+		frame.setIconImages(iconList);
 		frame.setLayout(new BorderLayout());
 		frame.setPreferredSize(new Dimension(800, 600));
 		frame.setJMenuBar(menubar);
@@ -942,7 +988,7 @@ class Support {
 	    new HeaderMapData("summary", "mmmmmmmmmmmmmmmmmmmmmmmm",
 			     String.class),
 	    new HeaderMapData("title", "mmmmmmmmmmm", String.class),
-	    new HeaderMapData("useDefault", "false", Boolean.class),
+	    new HeaderMapData("attend", "false", Boolean.class),
 	    new HeaderMapData("userID", "mmmmm", Integer.class),
 	    new HeaderMapData("user", "mmmmmmmmmmmmmmmmmmmmmmmmmm",
 			     ECDB.UserLabeledID.class),
@@ -1027,7 +1073,7 @@ class Support {
 			endTime = null, eventTime = null;
 		    java.sql.Date startDate = null, endDate = null;
 		    Boolean lnf = null, forEmail = null, forPhone = null,
-			attendingPreEvent = null, useDefault = null,
+			attendingPreEvent = null, attend = null,
 			weekday = null;
 		    ECDB.CarrierLabeledID carrier = null;
 		    ECDB.EventLabeledID event = null;
@@ -1130,9 +1176,9 @@ class Support {
 		    case PRE_EVENT_DEFAULT:
 			userID = ((ECDB.UserLabeledID)row.get(0)).getID();
 			ownerID = ((ECDB.OwnerLabeledID)row.get(1)).getID();
-			useDefault = (Boolean)obj;
+			attend = (Boolean)obj;
 			ecdb.setPreEventDefault(conn, userID, ownerID,
-						useDefault, false);
+						attend, false);
 		    case LOCATION:
 			locationID = (Integer)row.get(0);
 			switch (ci) {
@@ -2131,7 +2177,6 @@ class Support {
 
 	addButton.setEnabled(true);
 	addButton.addActionListener((ae) -> {
-		System.out.println("add button pushed");
 		try {
 		    addRows(panel, ecdb, table, jtable,
 			    columnHeadings.toArray(emptyString), rows);
@@ -2281,7 +2326,7 @@ class Support {
 		InputTablePane.ColSpec[] colspec = {
 		    new InputTablePane.ColSpec("Select", "mmmmmmm",
 					       Boolean.class,
-					       new DefaultTableCellRenderer(),
+					       null,
 					       new DefaultCellEditor
 					       (new JCheckBox())),
 		    new InputTablePane.ColSpec("User",
@@ -2774,7 +2819,7 @@ class Support {
 		opattern = (o == objects[0])? null: (String)o;
 		ownerID = (opattern == null || opattern.length() == 0)?
 		    -1: ecdb.findOwner(conn, opattern);
-		objects = ecdb.listSeriesLabels(conn, ownerID);
+		objects = ecdb.listSeriesLabels(conn, ownerID, true);
 		if (objects.length == 2) {
 		    // the first entry is "[ All ]"
 		    spattern = (String) objects[1];
@@ -2864,6 +2909,8 @@ class Support {
 		    panel.ulid = ecdb.getUserLabeledID(conn, userID);
 		}
 		JFrame frame = new JFrame("ECDB " + tableType.toString());
+		frame.setIconImages(iconList);
+
 		JMenuBar menubar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
 		fileMenu.setMnemonic(KeyEvent.VK_F);
@@ -2983,6 +3030,7 @@ class Support {
 		buttons[17].setBackground(goColor);
 
 		frame = new JFrame("ECDB");
+		frame.setIconImages(iconList);
 		JMenuBar menubar = new JMenuBar();
 		JMenu fileMenu = new JMenu("File");
 		fileMenu.setMnemonic(KeyEvent.VK_F);
@@ -3149,7 +3197,7 @@ class Support {
 				InputTablePane.ColSpec colspec[] = {
 				    new InputTablePane.ColSpec
 				    ("Select", "mmmm", Boolean.class,
-				     new DefaultTableCellRenderer(),
+				     null,
 				     new DefaultCellEditor(new JCheckBox())),
 				    new InputTablePane.ColSpec
 				    ("User",
@@ -3158,8 +3206,6 @@ class Support {
 				     new DefaultTableCellRenderer(),
 				     null)
 				};
-				System.out.println("userLabeledIDs.length = "
-						   +userLabeledIDs.length);
 				Vector<Vector<Object>>rows =
 				    new Vector<Vector<Object>>
 				    (userLabeledIDs.length);
@@ -3203,27 +3249,39 @@ class Support {
 				ownerID = (opattern == null
 					   || opattern.length() == 0)?
 				    -1: ecdb.findOwner(conn, opattern);
-				objects = ecdb.listSeriesLabels(conn, ownerID);
+				objects = ecdb.listSeriesLabels(conn, ownerID,
+								false);
 			    }
-			    if (objects.length == 2) {
-				// the first entry is "[ All ]"
-				spattern = (String) objects[1];
+			    if (objects.length == 0) {
+				// nothing to do
+				return;
+			    } else  if (objects.length == 1) {
+				// there is only a single series
+				spattern = (String) objects[0];
 			    } else {
 				o = JOptionPane.showInputDialog
 				    (frame, "Series:",
 				     "ECDB: Select Series",
 				     JOptionPane.QUESTION_MESSAGE, null,
 				     objects, objects[0]);
-				spattern = (o == objects[0])? null:
-				    (String)o;
+				spattern = (String)o;
 			    }
 			    try (Connection conn = ecdb.getConnection()) {
 				seriesID = (spattern == null
 					    || spattern.length() == 0)? -1:
 				    ecdb.findSeries(conn, ownerID, spattern);
-				for (int userID: userIDs) {
-				    if (userID == -1) break;
-				    ecdb.applySeries(conn, userID, seriesID);
+				try {
+				    conn.setAutoCommit(false);
+				    for (int userID: userIDs) {
+					if (userID == -1) break;
+					ecdb.applySeries(conn, userID,
+							 seriesID, false);
+				    }
+				    conn.commit();
+				} catch (Exception e) {
+				    conn.rollback();
+				} finally {
+				    conn.setAutoCommit(true);
 				}
 			    }
 			} catch (SQLException sqle) {
