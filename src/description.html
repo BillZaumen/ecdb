@@ -15,6 +15,49 @@ insert, update, or delete table entries, instances of
 <A HREF="https://tools.ietf.org/html/rfc5545">iCalendar</A>
 appointments and send them via email.
 <P>
+<UL>
+  <LI><B>Cell-phone information</B>. The database contains several tables
+    that are used, perhaps in conjunction with other services, to map
+    cell phone numbers to the email addresses for SMS gateways, so that
+    calendar appointments can be sent via SMS to cell phones. The software
+    is configured with a list of gateways for common cell-phone carriers.
+    These have a gateway associated with them is such that the user name in an
+    email address is the cell-phone number itself concatenated with an "@"
+    character and then a Internet domain name for the gateway.
+  <LI><B>User data</B>. The user data provides a list of "users" who will
+    attend events, including email addresses and optionally cell phone numbers.
+  <LI><B>Event data</B>. Each event has an "owner" described by an owner table.
+    There is a table for events, providing a description of the event and
+    whether some activity precedes the event (for example, a cocktail hour or
+    an introductory lecture). There can be several instances of an event. An
+    instance is essentially the event with a specific date, time, and location.
+    A location table defines the possible locations.
+  <LI><B>Timing data</B>. There are two tables associated with timing: the
+    first alarm table and the second alarm table. The first alarm table
+    assigns an alarm time to a starting time, with weekdays and weekends
+    distinguished. The software will interpolate for times not explicitly
+    provided. The table's key includes the user, owner, and location. This
+    table is used to set an alarm that will allow for travel time to an
+    event.  The second alarm provides a short warning before the event, or
+    some activity preceding the event, starts. This assumes one is within
+    walking distance of an event and simply needs a reminder to check the
+    clock or head over to the event. Which alarms are used are configurable.
+  <LI><B>Attendee data</B>.
+    The attendee data indicates which users will attend which event instances.
+    As an aid to configuring this table, one can also define a table containing
+    'series' A series is associated with an owner.  A user who 'subscribes' to
+    a series can then be automatically added to the attendee table for each
+    instance in the series.
+  <LI><B>Pre-event defaults</B>. There is also a pre-event default table.
+    This indicates if a user's default preference is to attend an activity
+    before an event or not.  It can be set for a user independently for
+    each event owner.
+</UL>
+In the following the owner description is called a "summary" and the
+event description is simply called a "description".  The "summary" should
+be shorter than the description. ECDB will pick the appropriate field
+(summary or description) based on the calendar appointment being created.
+<P>
   Calendar appointments include the starting date, starting time,
 ending date, and ending time for an event, whether there is some
 activity before an event and when that starts, and two optional
@@ -24,11 +67,118 @@ an email address or to the user's SMS service.  Each calendar
 appointment is tagged with fields that allow a previously sent
 calendar appointment to be updated.
 <P>
-  The database tables can grouped into four categories.  These are
-shown in the following four diagrams. In these tables, column names
+  All of the tables use a common convention for column names:
+<UL>
+  <LI><B>alarmTime</B>. A column with this name contains a possible time
+    for an alarm.
+  <LI><B>attend</B>. A column with this name contains a boolean value of
+    true if a user would by default attend some activity before the event;
+    false if not.  The appears in the preEventDefault table and in none of
+    the other tables.
+  <LI><B>attendeeState</B>. A column with this name contains the state
+    of a row in the attendee table.  The attendee state can be
+    'ACTIVE', 'CANCELLING' or 'CANCELLED'.
+  <LI><B>carrier</B>. A column with this name contains the name of a
+    wireless carrier
+  <LI><B>carrierID</B>. A column with this name contains an integer ID
+    assigned to a carrier.
+  <LI><B>cellNumber</B>. A column with this name contains a cell phone number,
+    not including the country prefix.
+  <LI><B>countryPrefix</B>. A column with this name contains a cellphone
+    number's country prefix (1 for the U.S.).
+  <LI><B>createTime</B>. A column with this name contains the time at which
+    a table row was created.
+  <LI><B>description</B>. A column with this name contains a description of
+    an event.
+  <LI><B>emailAddr</B>. A column with this name contains the email address
+    of a user.
+  <LI><B>emailSeqno</B>. A column with this name contains the sequence
+    number used in calendar appointments, and is incremented after each
+    change.
+  <LI><B>endDate</B>. A column with this name contains the date at which
+    an event ends.
+  <LI><B>endTime</B>. A column with this name contains the time at which
+    an event ends. This is a time of day and does not include the date.
+  <LI><B>eventID</B>. A column with this name contains an integer ID
+  assigned to an event.
+  <LI><B>eventTime</B>. A column with this name contains a possible time
+    at which an event starts. This is used in the first alarm table, which
+    lists alarm times for various event times.
+  <LI><B>firstName</B>. A column with this name contains a user's first name.
+  <LI><B>forEmail</B>. A column with this name contains a flag indicating if
+    an alarm is intended for a user's email address.
+  <LI><B>forPhone</B>. A column with this name contains a flag indicating if
+    an alarm is intended for a user's cell phone (sent via an SMS gateway).
+  <LI><B>idomain</B>. A column with this name contains an internet domain.
+    Depending on the table, it may be used as the domain name for an SMS
+    gateway or for a domain name associated with an owner, in which case it
+    will be used as part of a unique identifier.
+  <LI><B>instanceID</B>. A column with this name contains an integer ID
+    for rows in the event-instance table.
+  <LI><B>label</B>. A column with this name contains a short string naming
+    a row (something short enough to use in a pull-down menu).
+  <LI><B>lastEmailTime</B>. A column with this name contains a timestamp
+    providing the last time at which an email was sent for a user and an
+    event instance.
+  <LI><B>lastName</B>. A column with this name contains a user's last name.
+  <LI><B>lastNameFirst</B>. A column with this name contains a boolean
+    flag indicating if the user prefers his last name (his/her surname) to
+    be first or not.
+  <LI><B>lastPhoneTime</B>. A column with this name contains a timestamp
+    providing the last time at which an SMS was sent containing a calendar
+    appointment for the a user and event instance.
+  <LI><B>location</B>. A column with this name contains a description of
+    an event location
+  <LI><B>locationID</B>. A column with this name contains an integer ID
+    labeling a location.
+  <LI><B>modTime</B>. A column with this name contains a timestamp indicating
+    when a table row  as modified.
+  <LI><B>offset</B>. A column with this name contains an integer giving the
+    difference in minutes between a second alarm and the time at which
+    a event or pre-event activity starts.
+  <LI><B>ownerID</B>. A column with this name contains an integer ID for an
+    owner.
+  <LI><B>phoneSeqno</B>. A column with this name contains an integer that
+    provides a sequence number for calendar appointments sent to cell
+    phones.
+  <LI><B>preEventOffset</B>. A column with this name contains the offset in
+    minutes between a pre-event activity and an event. A value of 0 indicates
+    the lack of a pre-event activity.
+  <LI><B>preEventType</B>. A column with this name contains a name for
+    a pre-event activity.
+  <LI><B>seriesID</B>. A column with this name contains an ID for a series.
+    Each series is associated with an owner and has a label providing a
+    textual name.
+  <LI><B>setByCarrier</B>. A column with this name contains a boolean value
+    that indicates if an email address for an SMS gateway was set explicitly
+    or inferred based on the user's wireless carrier.
+  <LI><B>startDate</B>. A column with this name contains the starting date
+    for an event instance.
+  <LI><B>startTime</B>. A column with this name contains the starting time
+    for an event instance. This is the time of day and does not include the
+    date.
+  <LI><B>status</B>. A column with this name contains a status string.
+    The values for this string are ACTIVE, NOTACTIVE, or CANCELLED for
+    user-info rows, and TENTATIVE, CONFIRMED, or CANCELLED for event-instance
+    rows.
+  <LI><B>summary</B>. A column with this name contains a short description
+    of an owner.
+  <LI><B>title</B>. A column with this name contains the title of a user.
+    A null value indicates no title.
+  <LI><B>uid</B>. A column with this name contains a timestamp used in
+    generating a unique identifier.
+  <LI><B>weekday</B>. A column with this name contains boolean values.
+    A value of true indicates that the row describes a weekday and a
+    value of false indicates that the row describes a weekend. This
+    field is used in the first-alarm table.
+</UL>
+
+<P>
+  The database tables can be grouped into four categories.  These are
+shown in the following four diagrams. In these diagrams, column names
 followed with "(PK)" indicate a primary key, and those whose column
 names are followed with "(FK)" denote foreign keys. The types are Java
-types, not SQL types. The Java types used, which are useful to document
+types, not SQL types. The Java types, which are documented
 because of the use of JDBC, are the following:
 <UL>
   <LI><B>int</B>. The corresponding SQL type is an integer and the
@@ -45,6 +195,8 @@ because of the use of JDBC, are the following:
   <LI><B>Time</B>. The Java type is {@link java.sql.Time} and the SQL
     type is a date.
 </UL>
+
+The tables are shown below in a series of diagrams.
 In some diagrams, tables shown in blue (or gray if printed with a black
 and white printer) are references to tables from another diagram.
 <P>
@@ -666,5 +818,7 @@ The next set of mappings are provided for supporting various operations:
  -->
 <!--  LocalWords:  itbl modtime calFirstAlarm modTime nonAttendees
  -->
-<!--  LocalWords:  calSecondAlarm getInstanceCount
+<!--  LocalWords:  calSecondAlarm getInstanceCount preEventDefault
+ -->
+<!--  LocalWords:  attendeeState CANCELLING setByCarrier NOTACTIVE
  -->
