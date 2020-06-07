@@ -5,7 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ServiceLoader;
 
 /**
- * Base class for finding the email address to use for an SMS gateway
+ * Base class for finding the email address to use for an MMS gateway
  * for a cell phone number. Classes implementing this interface
  * are obtained via a service-provider interface.
  * @see CellEmailFinderSPI
@@ -17,7 +17,7 @@ public abstract class CellEmailFinder {
 
     /**
      * Look up the email address for a cell phone number's email address
-     * for the number's SMS gateway,
+     * for the number's MMS gateway,
      * using an instance of {@link CellEmailFinder} obtained from its
      * service-provider interface.
      * @param prefix the country prefix (e.g., 1 for the U.S.).
@@ -28,7 +28,7 @@ public abstract class CellEmailFinder {
 
     /**
      * Look up the cell phone number's email address for the number's
-     * SMS gateway.
+     * MMS gateway.
 
      * The ECDB database will be used to find a cached value and if
      * that is not available or has aged out, the method

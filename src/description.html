@@ -18,8 +18,8 @@ appointments and send them via email.
 <UL>
   <LI><B>Cell-phone information</B>. The database contains several tables
     that are used, perhaps in conjunction with other services, to map
-    cell phone numbers to the email addresses for SMS gateways, so that
-    calendar appointments can be sent via SMS to cell phones. The software
+    cell phone numbers to the email addresses for MMS gateways, so that
+    calendar appointments can be sent via MMS to cell phones. The software
     is configured with a list of gateways for common cell-phone carriers.
     These have a gateway associated with them is such that the user name in an
     email address is the cell-phone number itself concatenated with an "@"
@@ -63,7 +63,7 @@ ending date, and ending time for an event, whether there is some
 activity before an event and when that starts, and two optional
 alarms, with the times set on a per-user basis.  The class will also
 send messages with or without calendar appointments to users to either
-an email address or to the user's SMS service.  Each calendar
+an email address or to the user's MMS service.  Each calendar
 appointment is tagged with fields that allow a previously sent
 calendar appointment to be updated.
 <P>
@@ -108,9 +108,9 @@ calendar appointment to be updated.
   <LI><B>forEmail</B>. A column with this name contains a flag indicating if
     an alarm is intended for a user's email address.
   <LI><B>forPhone</B>. A column with this name contains a flag indicating if
-    an alarm is intended for a user's cell phone (sent via an SMS gateway).
+    an alarm is intended for a user's cell phone (sent via an MMS gateway).
   <LI><B>idomain</B>. A column with this name contains an internet domain.
-    Depending on the table, it may be used as the domain name for an SMS
+    Depending on the table, it may be used as the domain name for an MMS
     gateway or for a domain name associated with an owner, in which case it
     will be used as part of a unique identifier.
   <LI><B>instanceID</B>. A column with this name contains an integer ID
@@ -125,7 +125,7 @@ calendar appointment to be updated.
     flag indicating if the user prefers his last name (his/her surname) to
     be first or not.
   <LI><B>lastPhoneTime</B>. A column with this name contains a timestamp
-    providing the last time at which an SMS was sent containing a calendar
+    providing the last time at which an MMS was sent containing a calendar
     appointment for the a user and event instance.
   <LI><B>location</B>. A column with this name contains a description of
     an event location
@@ -150,7 +150,7 @@ calendar appointment to be updated.
     Each series is associated with an owner and has a label providing a
     textual name.
   <LI><B>setByCarrier</B>. A column with this name contains a boolean value
-    that indicates if an email address for an SMS gateway was set explicitly
+    that indicates if an email address for an MMS gateway was set explicitly
     or inferred based on the user's wireless carrier.
   <LI><B>startDate</B>. A column with this name contains the starting date
     for an event instance.
@@ -201,7 +201,7 @@ In some diagrams, tables shown in blue (or gray if printed with a black
 and white printer) are references to tables from another diagram.
 <P>
   The first diagram shows the tables for user data and some tables
-used to map cell phone numbers to the email address used by an SMS
+used to map cell phone numbers to the email address used by an MMS
 gateway provided by the user's wireless carrier:
 <CENTER>
   <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/user.png">
@@ -228,10 +228,15 @@ a series:
 There is a <A HREF="sql.xml.txt">default implementation</A> of these
 tables, represented as a set of Java properties saved in the standard
 XML format described in the documentation for the class
-{@link java.util.Properties}. Each property's key consists of a
-token naming some text, and optionally a token representing a database
-implementation, with these keys separated by a period.
-The SQL keys are
+{@link java.util.Properties}. An ECDB configuration file, desribed in
+the manual page ecdb(5), allows a file with this format to be loaded
+as well as the default. When both implement the same key, the one
+provided in the user-defined file is used.
+<P>
+<A NAME="sqlxml"></A>
+Each property's key consists of a token naming some text, and
+optionally a token representing a database implementation, with these
+keys separated by a period.  The SQL keys are
 <UL>
   <LI><B>sqlShutdownState</B>. Some databases throw an error when the
     database is being shut down. This lists the names of these errors.
@@ -342,9 +347,9 @@ email tables:
     country prefix and cellphone number.
   <LI><B>deleteCellPhoneEmail</B>. This property provides an SQL statement that
     will delete a mapping from a country prefix and cellphone number to the
-    email address of an SMS gateway.
+    email address of an MMS gateway.
   <LI><B>getCellPhoneEmail</B>. This property provides an SQL statement that
-    will return a row containing the email address of an SMS gateway, the
+    will return a row containing the email address of an MMS gateway, the
     set-by-carrier flag, and the modification time of a mapping given the
     mapping's country prefix and cell-phone number.
 </UL>
@@ -550,7 +555,7 @@ The next set of mappings are for the event-instance table:
   <LI><B>deleteEventInstanceByID</B>. This property provides an SQL
     statement that will delete a row from the event-instance table given
     the instanceID and provided that the status is 'CANCELLED'
-  <LI><B>deleteCanceledEventInstances</B>. This property provides an SQL
+  <LI><B>deleteCancelledEventInstances</B>. This property provides an SQL
     statement that will delete all rows from the event-instance table
     whose status column has the value CANCELLED.
   <LI><B>setEventInstanceData</B>. This property provides a format
@@ -718,7 +723,7 @@ The next set of mappings are provided for supporting various operations:
 </BODY>
 </HTML>
 
-<!--  LocalWords:  ECDB iCalendar SMS FK JDBC boolean init addUser
+<!--  LocalWords:  ECDB iCalendar MMS FK JDBC boolean init addUser
  -->
 <!--  LocalWords:  sqlShutdownState initForAuth initForRoles hasRoles
  -->

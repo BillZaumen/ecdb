@@ -7,7 +7,7 @@
  * an API for manipulating the database, and the ability to generate
  * calendar appointments customized to each user. This package
  * can email calendar appointments to users, with customized alarm
- * times, and can email these appointments to an SMS email gateway
+ * times, and can email these appointments to an MMS email gateway
  * so that the appointments can be added to a cell phone.
  */
 module org.bzdev.ecdb {

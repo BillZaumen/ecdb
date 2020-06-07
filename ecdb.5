@@ -1,1 +1,441 @@
-placeholder
+.TH ECDB "5" "June 2020" "ecdb VERSION" "File Formats and Conventions"
+.SH NAME
+ecdb \- ecdb file formats
+.SH DESCRIPTION
+ECDB is a program and a Java class library that provides a database
+describing events and the events' attendees. The database contains
+several tables including a user table (which describes the 'users' who
+can attend events), an owner table (which describes the organization, etc.,
+that is responsible for some events), a location table (which describes
+the location at which the events occur), an event table (which describes
+various events), an event-instance table (which describes specific instances
+of an event including locations and starting times), and an attendee table
+(which indicates which users attend which events). Some additional tables
+are used for determining the times for alarms.
+.PP
+ECDB main purpose is to generate email messages (or MMS messages using
+an email-to-MMS gateway) that will include calendar appointments with
+alarms.  ECDB can be used as a class library, as a command-line program,
+or as a GUI-based application.
+.PP
+ECDB uses two types of files: templates and ECDB configuration files.
+The formats of both of these are described below.
+.SH TEMPLATES
+Templates are describe fully in the documentation for the Java class
+.BR org.bzdev.util.TemplateProcessor .
+To summarize, a template contains a combination of text and directives.
+The directives start with "$" and "$$" is replaced with a single "$".
+After the initial "$", the directive is delimited by opening and closing
+parentheses using the following format:
+.TP
+.BI $( TOKEN )
+This directive denotes substitution.  A string looked up using
+.I TOKEN
+as a key will replace this directive.
+.TP
+.BI $( TOKEN1 : TOKEN2 )
+This is an interactive directive. If the key
+.I TOKEN1
+exists with a list of maps as its value, the template processor will
+iterate though the list and repeat the text between this directive and
+a simple directive that ends with
+.BI $( TOKEN2 )
+but using each successive map for looking up replacements. If there are
+no iterations it can be treated as a conditional directive
+.TP
+.BI $(+ TOKEN1 : TOKEN2 )
+This is a conditional construct with a single iteration. The text
+between this directive and the directive
+.BI $( TOKEN2 )
+will be processed if there is value for the key
+.I TOKEN1
+and will be ignored otherwise.
+.TP
+.BI $(- TOKEN1 : TOKEN2 )
+This is a conditional construct with a single iteration. The text
+between this directive and the directive
+.BI $( TOKEN2 )
+will be processed if there is no value for the key
+.I TOKEN1
+and will be ignored otherwise.
+.TP
+.BI $(! TEXT )
+This directive denotes a comment whose content is given by
+.IR TEXT .
+.PP
+The directives used by the template processors are the following:
+.TP
+.B firstName
+A user's first name
+.TP
+.B lastName
+A user's last name
+.TP
+.B lastNameFirst
+A conditional directive indicating a last-name-first preference.
+.TP
+.B lastNameLast
+A conditional directive indicating a a first-name-first (or last-name-last)
+preference.
+.TP
+.B title
+A user's title.
+.TP
+.B singleOwner
+A conditional directive indicating that a user's message describes a
+single owner. One may wish to format messages differently depending on
+whether there is a single owner or multiple owners.
+.TP
+.B multipleOwners
+A conditional directive indicating that a user's message describes
+multiple owners. One may wish to format messages differently depending on
+whether there is a single owner or multiple owners.
+.TP
+.B oli
+This provides the string "<li>" for the multiple-owner case and an empty
+string otherwise.
+.TP
+.B ob
+This provides the string "*" for the multiple-owner case and an empty
+string otherwise.
+.TP
+.B oindent
+This provides the string "    " for the multiple-owner case and an empty
+string otherwise.
+.TP
+.B sp
+This provides the string " " for the multiple-owner case and an empty
+string otherwise.
+.TP
+.B owners
+This is an iterative director that lists each owner.
+.TP
+.B summary
+This is provided inside the scope of an
+.B owners
+this directive and provides the values in summary columns of the owner table.
+.TP
+.B singleEvent
+This is a conditional directive, set for each owner iteration, that
+indicates the owner's calendar listing contains a single event instance.
+.TP
+.B multipleEvents
+This is a conditional directive, set for each owner iteration, that
+indicates the owner's calendar listing contains multiple event instances.
+.TP
+.B calendars
+This is an iterative directive, defined for each owner iteration, that
+lists the calendar data for that owner.
+.TP
+.B location
+This directive provides a location for each iteration in the calendar
+directive.
+.TP
+.B description
+This directive provides a description for each iteration in the calendar
+directive.
+.TP
+.B startDate
+This directive provides a starting date for each iteration in the calendar
+directive.
+.TP
+.B startTime
+This directive provides a starting time for each iteration in the calendar
+directive.
+.TP
+.B preEvent
+This directive provides a pre-event description for each iteration in
+the calendar directive.
+.TP
+.B endDate
+This directive provides an ending date for each iteration in the calendar
+directive.
+.TP
+.B endTime
+This directive provides an ending time for each iteration in the calendar
+directive.
+.TP
+.B eli
+This provides the string "<li>" within a calendar directive.
+.TP
+.B eb
+This provides the string "*" within a calendar directive when there is
+a single owner iteration, and the string "-" within a calendar
+directive when there are multiple owner iterations.
+.TP
+.B eindent
+This provides the string "    " within a calendar directive when there is
+a single owner iteration, and the string "        " within a calendar
+directive when there are multiple owner iterations.
+.TP
+.B sp
+This overrides the
+.B sp
+directive so that within a calendar directive, the replacement value is " ".
+
+.SH CONFIGURATION FILES
+
+ECDB sessions are controlled by a configuration file.  Each configuration
+file should start with the following line:
+.br
+.sp 1
+\ \ \ \ #$(!M.T application/x.ecdb-config)
+.br
+.sp 1
+This string is used to determine the ECDB configuration file's media
+type (the previous term was MIME type).  Configuration files should
+end with the suffix ".ecdb".  The file is actually a stylized Java
+properties file as described in the documentation for the class
+.BR java.util.Properties .
+This format creates keyword-value pairs, with the keyword and its
+value separated by an equal sign ("=") or a colon (":"). Whitespace
+around either is ignored.
+.PP
+The values may contain variable references using a syntax where the
+variable reference is of the form
+.BI $( KEY )
+where
+.I KEY
+is a series of tokens separated by a period (".") with no surrounding
+white space. A key can be defined at most once.  If there is no
+definition in the file, a Java property is used if one exists. Otherwise
+the property expands to an empty string.  The order in the file for
+these definitions does not matter:
+.B ecdb
+will sort the properties using a topological sort that will check for
+loops and generate an error if there are any.
+.PP
+In addition, if the first token in a key is base64, the corresponding
+value will be base-64 decoded and "base64." will be stripped from the key.
+Similarly, if the first token in a key is ebase64, the corresponding
+value will be base-64 decoded and then decrypted by GPG. The user will
+have to provide a GPG pass phrase, but only once per session if GPG
+Agent has been properly configured. GPG encryption for these files is
+used in practice merely for encrypting database passwords.
+.PP
+The standard properties are
+.TP
+.B type
+The database type.  The default properties file defines this as
+.BR derby .
+.TP
+.B dbName
+The name of the database. The default properties file defines this
+as
+.BR ecdb .
+.TP
+.B dbPath
+the path to the database. The default properties file defines this
+as
+.BR $(user.home)/.ecdb/$(dbName).$(type) .
+It should be empty (or missing) if the database is accessed over a
+network.
+.TP
+.B dbOwner
+This is the database owner. The default value is
+.BR $(user.name) ,
+the user's login name. That should be changed if multiple users are
+accessing the same database as only one will be the actual owner.
+.TP
+.B file.sql.xml
+The default value is
+.BR (Default) ,
+indicating that a build-in default sql.xml file will be used. The keys in
+this file are in one of two forms:
+.I NAME
+or
+.IB NAME . TYPE
+where
+.I NAME
+is the name of some feature
+and
+.I TYPE
+is the value of the
+.B type
+property (that is, the value produced by the expression
+.BR $(type)).  This property can be used to either implement the
+code for a database that is not supported directly or to provide
+customized database tables. The behavior for ECDB is to first
+read the default properties (which are stored internally), and then
+read the user-provided file to get either additional properties or
+to override existing ones. As a result, a file provided by the
+.B file.sql.xml
+property has to redefine keys from the default file only when their
+values have to change. There is a description of the keys at
+.br
+.sp 1
+.BR <file:/usr/share/doc/ecdb-doc/api/doc-files/description.html#sqlxml> .
+.TP
+.B configAuth
+The default value is
+.BR FALSE .
+When
+.BR TRUE ,
+the database will be configured to require user authentication. I.e.,
+a user will have to use a password to access the database.
+.TP
+.B configRoles
+The default value is
+.BR FALSE .
+If set to true, the database will be configured to use roles.
+.TP
+.B ECADMIN
+This is the name of role for a user who is administrating the
+ECDB component of a database).
+The default value is
+.BR $(ECSCHEMA)Admin .
+Of the three defined roles, this is the least restrictive.
+.TP
+.B ECOWNER
+This is the name of role for a user who can manipulate owner data in the
+ECDB component of a database).
+The default value is
+.BR $(ECSCHEMA)Owner .
+Users with this role can modify the owner table, the location table,
+the event table, the event-instance table, the series table, and the
+series-instance table. Such users can insert rows into and delete rows
+from these tables, and can update specific columns in each. Some
+columns, typically timestamps, require the ECADMIN role.
+.TP
+.B ECUSER
+This is the name of role for a user who can manipulate user data in the
+ECDB component of a database).
+The default value is
+.BR $(ECSCHEMA)User .
+Users with this role can modify the user table, the cell-phone-email
+table, the pre-event-default table, the first-alarm table, the
+second-alarm table, and the attendee table. Such users can insert rows
+into and delete rows from these tables, and can update specific
+columns in each. Some columns, typically timestamps, require the
+ECADMIN role.
+.TP
+.B ECSCHEMA
+This property defines the name of the ECDB schema. The default value
+is
+.BR EventCalendar .
+It can be changed if a database has to support multiple instances of ECDB
+or if there would otherwise be a name conflict with other database
+applications.
+.TP
+.B createURL
+This should be empty if ECDB should not try to create a database.
+Some databases can be created by simply connecting to it using a
+specific JDBC URL.
+The default is
+.BR jdbc:derby:$(dbPath);create=true .
+.TP
+.B openURL
+This property provides the JDBC URL for connecting to a database.
+The default is
+.BR jdbc:derby:$(dbPath) .
+.TP
+.B shutdownURL
+This should be empty if ECDB should not try to shut down a database.
+The default value is
+.BR jdbc:serby:$(dbPath);shutdown=true .
+For Apache Derby when a local database is used, only one process has
+access to it at a time. Shutdown down the database when ecdb exits is
+useful in this case as opening the database subsequently will be
+faster.
+.TP
+.BI auth.user. N
+These properties, where
+.I N
+is a positive integer, provide the names of various database users.
+By convention
+.I N
+is 1 for the database owner, whose name is the value
+.BR $(dbOwner) .
+.TP
+.BI auth.roles. N
+These properties are used when database roles are configured. The value is
+a list of database roles for the user for the
+.BI auth.user. N
+key.
+
+.TP
+.BI auth.password. N
+These properties are used when a database is password protected. The value is
+the password for the user for the
+.BI auth.user. N
+key.  Normally this password will be GPG encrypted, so the key will be
+.BI ebase64.auth.password. N
+and consequently both rather long and not readable. Because of the use
+of GPG, an administrator can encrypt a key so that it can be decrypted
+by both the administrator and a specific user, but not others.
+.TP
+.BI connection.KEY
+Parameters for a database connection can be provides in as java properties
+(some instance of the class java.util.Properties). A properties object
+will with a key equal to
+.I KEY
+and with the corresponding value for each property whose first subkey is
+.BR connection .
+The default configuration file contains two of these cases:
+.br
+.sp 1
+.B \ \ \ \ connection.user=$(auth.user.1)
+.br
+.sp 1
+and
+.br
+.sp 1
+.B \ \ \ \ connection.user=$(auth.password.1)
+.br
+.sp 1
+These provide the user and password to use in setting up a database
+connection.
+.PP
+To configure email (only SMTP), a specific pattern of keys will be used:
+.TP
+.BI [base64|ebase64].email. SUBKEY [. SUBKEY ]*
+These keys will include some standard keys and keys specific to an
+email provider.
+.PP
+The standard keys are
+.TP
+.B email.user
+The login name for an SMTP server
+.TP
+.B email.password
+The password for an SMTP server (this should be prefaced with "ebase64" as
+the password should be encrypted).
+.TP
+.B email.provider
+The email provider (e.g., javamail)
+.TP
+.B email.subject
+The email subject header (used if no subject line is provided).
+.PP
+For javamail, a typical configuration for the "email" keys is
+.TP
+.B email.mail.snmtp.auth=true
+.TQ
+.B email.mail.smtp.host=mail.foo.com
+.TQ
+.B email.mail.smtp.port=587
+.TQ
+.B email.mail.smtp.starttls.enable=true
+.TQ
+.B email.provider=javamail
+.TQ
+.B email.user=user@foo.com
+.TQ
+.B ebase64.email.password=[too long to show]
+.PP
+In these examples, foo.com and mail.foo.com would be replaced by
+the actual domain names and user@foo.com would be replaced with
+whatever user name is appropriate for the SMTP server.
+.SH SEE ALSO
+.BR ecdb (1)
+.br
+.B file:/usr/share/doc/ecdb-doc/api/doc-files/description.html#sqlxml
+
+\"  LocalWords:  ECDB ecdb TP firstName lastName lastNameFirst oli li
+\"  LocalWords:  lastNameLast singleOwner multipleOwners oindent sp
+\"  LocalWords:  singleEvent multipleEvents startDate startTime pre
+\"  LocalWords:  preEvent endDate endTime eli eb eindent br ebase GPG
+\"  LocalWords:  Whitespace decrypted dbName dbPath dbOwner sql xml
+\"  LocalWords:  IB sqlxml configAuth configRoles ECADMIN ECSCHEMA TQ
+\"  LocalWords:  ECOWNER ECUSER EventCalendar createURL JDBC openURL
+\"  LocalWords:  shutdownURL auth subkey SMTP javamail

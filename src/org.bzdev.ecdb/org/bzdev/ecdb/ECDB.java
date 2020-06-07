@@ -45,7 +45,7 @@ import org.bzdev.util.TemplateProcessor.KeyMapList;
  * activity before an event and when that starts, and two optional
  * alarms, with the times set on a per-user basis.  The class will also
  * send messages with or without calendar appointments to users to
- * either an email address or to the user's SMS service.  Each calendar
+ * either an email address or to the user's MMS service.  Each calendar
  * appointment is tagged with fields that allow a previously sent calendar
  * appointment to be updated.
  *
@@ -471,7 +471,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param userID the recipient's user ID
      * @param useEmail true if the recipient's email address will be used;
-     *        false if the SMS email address for the recipient's cell phone
+     *        false if the MMS email address for the recipient's cell phone
      *        is used.
      */
     public String getFullEmailAddress(Connection conn, int userID,
@@ -1432,7 +1432,7 @@ public class ECDB implements AutoCloseable {
      * List a carrier map.
      * The return value represents a table, each row of which contains
      * a country prefix, a carrierID or a carrier labeled-ID, and an
-     * email domain of a gateway to the SMS service.
+     * email domain of a gateway to the MMS service.
      * @param conn the database connection
      * @param countryPrefix the country prefix or code
      * @param carrier the name of a carrier
@@ -1501,11 +1501,11 @@ public class ECDB implements AutoCloseable {
      * List a carrier map.
      * The return value represents a table, each row of which contains
      * a country prefix, a carrierID or a carrier labeled-ID, and an
-     * email domain of a gateway to the SMS service.
+     * email domain of a gateway to the MMS service.
      * @param conn the database connection
      * @param countryPrefix the country prefix or code
      * @param carrierID the carrier ID
-     * @return the email domain used for SMS messages sent via email; null
+     * @return the email domain used for MMS messages sent via email; null
      *         if there is none
      */
     public String getCarrierDomain(Connection conn, String countryPrefix,
@@ -1536,7 +1536,7 @@ public class ECDB implements AutoCloseable {
      * @param countryPrefix the country prefix or code
      * @param carrierID the carrier ID
      * @param domain the domain name for the email gateway used to forward
-     *        an email to a carrier's SMS service
+     *        an email to a carrier's MMS service
      */
     public void setCarrierMapping(Connection conn, String countryPrefix,
 				  int carrierID, String domain)
@@ -1551,7 +1551,7 @@ public class ECDB implements AutoCloseable {
      * @param countryPrefix the country prefix or code
      * @param carrierID the carrier ID
      * @param domain the domain name for the email gateway used to forward
-     *        an email to a carrier's SMS service
+     *        an email to a carrier's MMS service
      * @param commit true if the new changes should be committed; false
      *        otherwise
      */
@@ -1782,7 +1782,7 @@ public class ECDB implements AutoCloseable {
 	try {
 	    conn.setAutoCommit(false);
 	    try (PreparedStatement ps1
-		 = conn.prepareStatement(getSQLProperty("findUserInfoWNE"))) {
+		 = conn.prepareStatement(getSQLProperty("findUserInfo"))) {
 		try (PreparedStatement ps2 = conn.prepareStatement
 		     (getSQLProperty("deleteUserInfoByID"))) {
 		    // System.out.format("finding user(s) \"%s\"\n", pattern);
@@ -2318,7 +2318,7 @@ public class ECDB implements AutoCloseable {
     }
 
     /**
-     * Get the email address for a user's SMS gateway.
+     * Get the email address for a user's MMS gateway.
      * @param conn the database connection
      * @param userID the userID
      * @param full true if the email address includes the user's name
@@ -4589,7 +4589,7 @@ public class ECDB implements AutoCloseable {
 				   if (console != null) {
 				       String response = console.readLine
 					   (String.format
-					    ("deleting first alarm entry "
+					    ("deleting second alarm entry "
 					     + "u=%d, o=%d, l=%d "
 					     + "[Yn!<ESC>]:",
 					     rs.getInt(1), rs.getInt(2),
@@ -5909,7 +5909,7 @@ public class ECDB implements AutoCloseable {
      * "CANCELLED".
      * @param conn the database connection
      */
-    public void deleteCanceledEventInstances(Connection conn)
+    public void deleteCancelledEventInstances(Connection conn)
 	throws SQLException
     {
 	try {
@@ -9507,7 +9507,7 @@ public class ECDB implements AutoCloseable {
     private Boolean preflight = null;
 
     /**
-     * Set the subject for a message (email or SMS via a gateway).
+     * Set the subject for a message (email or MMS via a gateway).
      * @param subject the subject line
      */
     public void setSubject(String subject) {this.subject = subject;}
@@ -9519,7 +9519,7 @@ public class ECDB implements AutoCloseable {
     public String getSubject() {return subject;}
 
     /**
-     * Set the media type for a message (email or SMS via a gateway).
+     * Set the media type for a message (email or MMS via a gateway).
      * @param mediaType the media type (e.g., text/html)
      */
     public void setMediaType(String mediaType) {this.mediaType = mediaType;}
@@ -9531,7 +9531,7 @@ public class ECDB implements AutoCloseable {
     public String getMediaType() {return mediaType;}
 
     /**
-     * Set the alternative media type for a message (email or SMS via
+     * Set the alternative media type for a message (email or MMS via
      * a gateway).
      * @param mediaType the media type (e.g., text/plain)
      */
@@ -9605,7 +9605,7 @@ public class ECDB implements AutoCloseable {
 
     /**
      * Send a calendar appointment or message via email, either to
-     * an email address. For SMS, the recipient address is that for a
+     * an email address. For MMS, the recipient address is that for a
      * gateway.
      * @param ecdb the instance of ECDB to use.
      * @param conn a database connection obtained from ecdb
@@ -9709,7 +9709,7 @@ public class ECDB implements AutoCloseable {
 
     /**
      * Send a calendar appointment or message via email, either to
-     * an email address. For SMS, the recipient address is that for a
+     * an email address. For MMS, the recipient address is that for a
      * gateway.
      * @param ecdb the instance of ECDB to use.
      * @param conn a database connection obtained from ecdb
@@ -9719,7 +9719,7 @@ public class ECDB implements AutoCloseable {
      *        containing calendars and data needed to identify
      *        recipients and format messages
      * @param forEmail true if the message should be formatted as an
-     *        email messages; false if it should be formatted as an SMS
+     *        email messages; false if it should be formatted as an MMS
      *        message
      * @param suppressCalendars true if calendars should not be attached
      *        to a message; false otherwise
@@ -10317,9 +10317,6 @@ public class ECDB implements AutoCloseable {
 			System.exit(1);
 		    }
 		}
-	    } else if (argv[ind].equals("--")) {
-		ind++;
-		break;
 	    } else if (argv[ind].startsWith("-")) {
 		System.err.format("ecdb: unrecognized option \"%s\"\n",
 				  argv[ind]);
@@ -10823,8 +10820,8 @@ public class ECDB implements AutoCloseable {
 	    if (addPreEventDefault) {
 		try (ECDB ecdb = new ECDB(f)) {
 		    try (Connection conn = ecdb.getConnection()) {
-			if (forEmail == null) forEmail = false;
-			if (forPhone == null) forPhone = true;
+			// if (forEmail == null) forEmail = false;
+			// if (forPhone == null) forPhone = true;
 			if (userID == -1 && upattern != null) {
 			    userID = ecdb.findUserInfo(conn, upattern);
 			}
@@ -11131,6 +11128,12 @@ public class ECDB implements AutoCloseable {
 			} else if (spattern != null) {
 			    if (ownerID == -1 && opattern != null) {
 				ownerID = ecdb.findOwner(conn, opattern);
+				if (ownerID == -1) {
+				    System.err.println("ecdb: "
+						       + "no matching owner "
+						       + "for " + spattern);
+				    System.exit(1);
+				}
 			    }
 			    ecdb.deleteSeries(conn, ownerID, spattern);
 			} else if (iarray != null && iarray.length > 0) {
@@ -11150,6 +11153,9 @@ public class ECDB implements AutoCloseable {
 			}
 			if(eventID == -1 && epattern != null) {
 			    eventID = ecdb.findEvent(conn, ownerID, epattern);
+			}
+			if (locationID == -1 && lpattern != null) {
+			    locationID = ecdb.findLocation(conn, lpattern);
 			}
 			if (instanceID == -1) {
 			    instanceID = ecdb.findEventInstance
@@ -11282,6 +11288,12 @@ public class ECDB implements AutoCloseable {
 								locationID,
 								startDate,
 								startTime);
+			}
+			if (seriesID == -1 && spattern != null) {
+			    if (ownerID == -1 && opattern != null) {
+				ownerID = ecdb.findOwner(conn, opattern);
+			    }
+			    seriesID = ecdb.findSeries(conn, ownerID, spattern);
 			}
 			vector = ecdb.listAttendees(conn, userID, instanceID,
 						    seriesID, attendeeState,
@@ -11420,12 +11432,27 @@ public class ECDB implements AutoCloseable {
 		    try (Connection conn = ecdb.getConnection()) {
 			if (userID == -1 && upattern != null) {
 			    userID = ecdb.findUserInfo(conn, upattern);
+			    if (userID == -1) {
+				System.err.println("ecdb: user \"" + upattern
+						   + "\" does not exist");
+				System.exit(1);
+			    }
 			}
 			if (ownerID == -1 && opattern != null) {
 			    ownerID = ecdb.findOwner(conn, opattern);
+			    if (ownerID == -1) {
+				System.err.println("ecdb: owner \"" + opattern
+						   + "\" does not exist");
+				System.exit(1);
+			    }
 			}
 			if (eventID == -1 && epattern != null) {
 			    eventID = ecdb.findEvent(conn, ownerID, epattern);
+			    if (eventID == -1) {
+				System.err.println("ecdb: event \"" + epattern
+						   + "\" does not exist");
+				System.exit(1);
+			    }
 			}
 			boolean flag = false;
 			if ((forEmail == null && forPhone == null)
@@ -11446,17 +11473,6 @@ public class ECDB implements AutoCloseable {
 				altTemplateURL = altTemplate.toURI().toURL();
 			    }
 			}
-			/*
-			if (forEmail && mediaType == null && template == null
-			    && altMediaType == null && altTemplate == null) {
-			    mediaType = "text/html; charset=UTF-8";
-			    templateURL = ECDB.class.getResource("text.tpl");
-			    altMediaType = "text/plain; charset=UTF-8";
-			    altTemplateURL = ECDB.class
-				.getResource("alttext.tpl");
-			}
-			*/
-
 			Vector<UserCalendars> vector =
 			    ecdb.getCalendars(conn, userID, ownerID,
 					      eventID, flag);
@@ -11470,17 +11486,6 @@ public class ECDB implements AutoCloseable {
 			    Vector<byte[]> calendars =
 				vector.get(0).calendars;
 			    copyToClipboard(calendars, true);
-			    /*
-			      Support.ICalTransferable t
-			      = new Support.ICalTransferable(calendars);
-			      Clipboard clipboard = Toolkit.getDefaultToolkit()
-			      .getSystemClipboard();
-			      clipboard.setContents(t, t);
-			      Console console = System.console();
-			      String request =
-			      "Press RETURN when operation is complete: ";
-			      console.readLine(request);
-			    */
 			} else if (saveToDir && vlen > 1) {
 			    System.err.println("ecdb: multiple users when only"
 					       + " one is allowed");
@@ -11489,26 +11494,6 @@ public class ECDB implements AutoCloseable {
 				Vector<byte[]> calendars = vector.get(0)
 				    .calendars;
 				saveToDirectory(dir, calendars);
-				/*
-				  int n = calendars.size();
-				  int nn = n;
-				  int digits = 0;
-				  do {
-				  digits++;
-				  nn = nn/10;
-				  } while (nn > 0);
-				  String format = "event%0" + digits +"d.ics";
-				  int i = 0;
-				  for (byte[] calendar: calendars) {
-				  String fname = String.format(format, ++i);
-				  // System.out.println("fname = " + fname);
-				  File ff = new File(dir, fname);
-				  InputStream in =
-				  new ByteArrayInputStream(calendar);
-				  Path p = ff.toPath();
-				  Files.copy(in, p);
-				  }
-				*/
 			    }
 			} else if (sendViaEmail) {
 			    ecdb.setSubject(subject);
@@ -11525,61 +11510,6 @@ public class ECDB implements AutoCloseable {
 			    }
 			    sendViaEmail(ecdb, conn, vector,
 					 suppressCalendars, null, false);
-			    /*
-			    Properties emailProperties =
-				ecdb.getEmailProperties();
-			    if (subject != null) {
-				emailProperties.put("subject", subject);
-			    }
-			    if (mediaType != null) {
-				emailProperties.put("textMediaType", mediaType);
-			    }
-			    if (altMediaType != null) {
-				emailProperties.put("altTextMediaType",
-						    altMediaType);
-			    }
-			    String provider =
-				emailProperties.getProperty("provider");
-			    SMTPAgent agent = SMTPAgent.newInstance(provider);
-			    if (agent != null) {
-				for (UserCalendars ucals: vector) {
-				    if (mediaType != null) {
-					StringBuilder sb = new StringBuilder();
-					AppendableWriter w =
-					    new AppendableWriter(sb);
-					TemplateProcessor tp = new
-					    TemplateProcessor(ucals.kmap);
-					tp.processURL(templateURL, "UTF-8", w);
-					String txt = sb.toString()
-					    .replaceAll("\r\n", "\n")
-					    .replaceAll("\n", "\r\n");
-					emailProperties.put("text", txt);
-				    }
-				    if (altMediaType != null) {
-					StringBuilder sb = new StringBuilder();
-					AppendableWriter w =
-					    new AppendableWriter(sb);
-					TemplateProcessor tp = new
-					    TemplateProcessor(ucals.kmap);
-					tp.processURL(altTemplateURL,
-						      "UTF-8", w);
-					String txt = sb.toString()
-					    .replaceAll("\r\n", "\n")
-					    .replaceAll("\n", "\r\n");
-					emailProperties.put("altText", txt);
-				    }
-				    String to = ecdb.getFullEmailAddress
-					(conn, ucals.userID, flag);
-				    if (to != null
-					&& ucals.calendars.size() > 0) {
-					agent.send(emailProperties, to,
-						   ucals.calendars);
-				    }
-				}
-			    } else {
-				System.err.println("no SMTP agent");
-			    }
-			    */
 			} else {
 			    ecdb.setSubject(subject);
 			    ecdb.setMediaType(mediaType);
@@ -11591,43 +11521,6 @@ public class ECDB implements AutoCloseable {
 					  // mediaType, templateURL,
 					  // altMediaType, altTemplateURL,
 					  flag, suppressCalendars);
-			    /*
-			    boolean first = true;
-			    for (UserCalendars ucal: vector) {
-				if (first) {
-				    first = false;
-				} else {
-				    System.out.println();
-				}
-				System.out.format
-				    ("*** For user %d (%s) ***\n",
-				     ucal.userID,
-				     ecdb.getFullEmailAddress
-				     (conn, ucal.userID, flag));
-				if (subject != null) {
-				    System.out.println("*** subject: "
-						       + subject);
-				}
-				if (mediaType != null) {
-				    System.out.println("*** text ***");
-				    TemplateProcessor tp = new
-					TemplateProcessor(ucal.kmap);
-				    tp.processURL(templateURL,
-						  "UTF-8", System.out);
-				}
-				if (altMediaType != null) {
-				    System.out.println("*** alt text ***");
-				    TemplateProcessor tp = new
-					TemplateProcessor(ucal.kmap);
-				    tp.processURL(altTemplateURL,
-						  "UTF-8", System.out);
-				}
-				if (mediaType != null || altMediaType != null) {
-				    System.out.println("*** Calendars ***");
-				}
-				printICals(ucal.calendars);
-			    }
-			    */
 			}
 		    }
 		}

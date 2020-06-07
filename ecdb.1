@@ -1,1 +1,1507 @@
-placeholder
+.TH ECDB "1" "May 2018" "ecdb VERSION" "User Commands"
+.SH NAME
+ecdb \- use and manipulate an event-calendar database
+.SH SYNOPSIS
+.B ecdb\ \fR[\fIOPTIONS\fR]\ [\fB\-\-\fR]\ [\fIARGS\fR]\fB
+.br
+.SH DESCRIPTION
+.PP
+ECDB is a program and a Java class library that provides a database
+describing events and the events' attendees. The database contains
+several tables including a user table (which describes the 'users' who
+can attend events), an owner table (which describes the organization, etc.,
+that is responsible for some events), a location table (which describes
+the location at which the events occur), an event table (which describes
+various events), an event-instance table (which describes specific instances
+of an event including locations and starting times), and an attendee table
+(which indicates which users attend which events). Some additional tables
+are used for determining the times for alarms.
+.PP
+ECDB main purpose is to generate email messages (or MMS messages using
+an email-to-MMS gateway) that will include calendar appointments with
+alarms.  ECDB can be used as a class library, as a command-line program,
+or as a GUI-based application.
+
+.SH GENERAL OPTIONS
+.TP
+.BI \-\-cols\  ARG
+For table listings, indicate which columns should be shown.
+The argument
+.I ARG
+is a comma-separated list of integers specifying the columns to show.
+Spaces before or after the commas are ignored, but
+.I ARG
+must be a single command-line argument.  The columns are numbered starting
+at 0.
+.TP
+.B \-\-configure
+This options creates or edits a configuration file.  If the
+configuration file exists, the
+.B \-f
+option should be present.  A graphical editor will allow the
+configuration to be changed as desired, starting from a default
+configuration.  If the default configuration is not used, this
+option must be used before the database and its tables are created.
+.TP
+.B \-\-create
+This options is equivalent to the options
+.B \-\-createDB
+and
+.B \-\-createTables
+when both are present.
+.TP
+.B \-\-createDB
+This options creates and initializes a database. In most cases the
+database should be a local one. Network databases
+.TP
+.B \-\-createTables
+This option create the ECDB database tables.
+.TP
+.BI \-f\  FILE
+.TQ
+.BI \-\-file\  FILE
+This option sets the configuration file to
+.IR FILE .
+It must be used with the
+.B \-\-createDB
+and
+.B \-\-createTables
+if the default database configuration is not used.
+.TP
+.B \-i
+.TQ
+.B \-\-id
+.TP
+Arguments after the option consist of a series of integer IDs.
+.TP
+.B \-\-noHeaders
+Do not show headers in table listings.
+.TP
+.B \-\-
+End of options.
+.TP
+.B \-v
+.TQ
+.B \-\-verbose
+Show additional columns in listings.  For some tables, the
+default behavior it to list only an integer-valued primary
+key.  When this option is used, all publicly available columns
+are listed.
+
+.SH TABLE COLUMN OPTIONS
+.BI \-\-carrierID\  ARG
+The argument
+.I ARG
+is an integer providing a carrier ID. A value of -1 indicates
+that a specific carrier is not indicated.
+TP
+.BI \-\-carrier\  ARG
+The argument
+.I ARG
+is a case-insensitive string naming a wireless carrier.
+.TP
+.BI \-\-countryPrefix\  ARG
+The argument
+.I ARG
+is a string of numbers providing the country prefix for a phone
+number (1 for the U.S.) The '+' used as convention for international
+dialing must not be included.
+.TP
+.BI \-\-idomain\  ARG
+The argument
+.I ARG
+is a string providing a fully qualified Internet domain name.
+.TP
+.BI \-\-userID\  ARG
+The argument
+.I ARG
+is an integer providing a user ID.  The value -1 is reserved and
+matches any user ID.
+.TP
+.BI \-\-upattern\  ARG
+The argument
+.I ARG
+is a string providing a pattern used to search for strings in various
+columns of the UserInfo table.  This is an SQL pattern,
+so that '%' is a wildcard matching any number of characters and '_'
+matches a single character. In addition a "|" can be used to indicate
+alternatives in user-table listings: it will be expanded to match
+multiple patterns, all of which will be concatenated.
+.TP
+.BI \-\-firstName\  ARG
+The argument
+.I ARG
+is the first name of a user (it can be used for all names except the user's
+surname).
+.TP
+.BI \-\-lastName\  ARG
+The argument
+.I ARG
+is the last name of the user (the user's surname)
+.TP
+.BI \-\-lastNameFirst\  ARG
+The argument
+.I ARG
+is a boolean value, "true" or "false", indicating if the user prefers
+his/her last name to appear before his first name.
+.TP
+.BI \-\-title\  ARG
+The argument
+.I ARG
+is a string providing the user's title (e.g., Mr., Mrs., Miss, Dr.) and
+can be provided if desired
+.TP
+.BI \-\-emailAddr\  ARG
+The argument
+.I ARG
+is a string providing a  user's email address.
+.TP
+.BI \-\-cellNumber\  ARG
+The argument
+.I ARG
+is a string providing a user's cellphone number.
+.TP
+.BI \-\-status\  ARG
+The argument
+.I ARG
+is a string providing a status. For a user, the status values are
+.BR ACTIVE ,
+.BR NOTACTIVE ,
+or
+.BR CANCELLED .
+For an event, the values are
+.BR TENTATIVE ,
+.BR CONFIRMED ,
+or
+.BR CANCELLED .
+.TP
+.BI \-\-ownerID\  ARG
+The argument
+.I ARG
+is an integer providing an owner ID. The value -1 is reserved and
+indicates any owner.
+.TP
+.BI \-\-opattern\  ARG
+The argument
+.I ARG
+is a pattern used to match an owner's label. This is an SQL pattern,
+so that '%' is a wildcard matching any number of characters and '_'
+matches a single character.
+.TP
+.BI \-\-label\  ARG
+The argument
+.I ARG
+is a string used as a label in various tables.  A label is a short
+descriptive string whose length is suitable for use in a pull-down
+menu or combo box.
+.TP
+.BI \-\-summary\  ARG
+The argument
+.I ARG
+is a string providing a description of an owner.
+.TP
+.BI \-\-locationID\  ARG
+The argument
+.I ARG
+is an integer providing a location ID. The value -1 is reserved and
+matches any location.
+.TP
+.BI \-\-location\  ARG
+The argument
+.I ARG
+is a string providing a textual description of a location.
+.TP
+.BI \-\-peDefault\  ARG
+The argument
+.I ARG
+is a boolean value, "true", or "false", indicating if a user's default
+behavior is to attend a pre-event activity or not.
+.TP
+.BI \-\-eventTime\  ARG
+The argument
+.I ARG
+is a time of day providing a possible time for an event. Hours, minutes,
+and optionally seconds use a colon (":") as a separator. All except hours
+must be two digits. The strings "am" or "pm" may be appended, separated by
+at most one space, if a 12-hour clock is used.
+.TP
+.BI \-\-weekday\  ARG
+The argument
+.I ARG
+is a boolean value, "true" or "false", indicating if a row in the first
+or second alarm table refers to a weekday or not.
+.TP
+.BI \-\-alarmTime\  ARG
+The argument
+.I ARG
+is the time of day for an alarm. Hours, minutes, and optionally
+seconds use a colon (":") as a separator. All except hours must be two
+digits. The strings "am" or "pm" may be appended, separated by at most
+one space, if a 12-hour clock is used.
+.TP
+.BI \-\-forEmail\  ARG
+The argument
+.I ARG
+is a boolean value, "true" or "false". For table entries, this indicates if
+the corresponding alarm should be included in calendar updates sent to the
+user's email address.  When a calendar is generated, the field indicates if
+the calendar will or would be sent to the user's email address. As a
+convenience,
+.I ARG
+may be eliminated if the next argument starts  with "\-\-", in which case
+the value is assumed to be "true".
+.TP
+.BI \-\-forPhone\  ARG
+The argument
+.I ARG
+is  a boolean value, "true" or "false". For table entries, this indicates if
+the corresponding alarm should be included in calendar updates sent to the
+user's cell phone.  When a calendar is generated, the field indicates if
+the calendar will or would be sent to the user's cell phone. As a
+convenience,
+.I ARG
+may be eliminated if the next argument starts  with "\-\-", in which case
+the value is assumed to be "true".
+.TP
+.BI \-\-offset\  ARG
+The argument
+.I ARG
+is an non-negative integer providing a time offset in minutes. In an
+event table, a 0 offset indicates that there is no pre-event activity.
+.TP
+.BI \-\-eventID\  ARG
+The argument
+.I ARG
+is an integer providing an event ID. The value -1 is reserved and
+matches any event.
+.TP
+.BI \-\-epattern\  ARG
+The argument
+.I ARG
+is a string providing a pattern used to match event-table labels.
+This is an SQL pattern, so that '%' is a wildcard matching any number
+of characters and '_' matches a single character.
+.TP
+.BI \-\-description\  ARG
+The argument
+.I ARG
+is a string providing a description of an event.
+.TP
+.BI \-\-startDate\  ARG
+The argument
+.I ARG
+is a string providing a starting date for an event. The date is in
+java.sql.Date format: yyyy-[m]m-[d]d.  While a single-digit month or
+day is acceptable, 4 digits are required for the year.
+.TP
+.BI \-\-startTime\  ARG
+The argument
+.I ARG
+is a string providing the starting time-of-day for an event.  Hours,
+minutes, and optionally seconds use a colon (":") as a separator. All
+except hours must be two digits. The strings "am" or "pm" may be
+appended, separated by at most one space, if a 12-hour clock is used.
+.TP
+.BI \-\-endDate\  ARG
+The argument
+.I ARG
+is  a string providing an ending date for an event. The date is in
+java.sql.Date format: yyyy-[m]m-[d]d.  While a single-digit month or
+day is acceptable, 4 digits are required for the year.
+.TP
+.BI \-\-endTime\  ARG
+The argument
+.I ARG
+is a string providing the ending time-of-day for an event.  Hours,
+minutes, and optionally seconds use a colon (":") as a separator. All
+except hours must be two digits. The strings "am" or "pm" may be
+appended, separated by at most one space, if a 12-hour clock is used.
+.TP
+.BI \-\-attendingPreEvent\  ARG
+The argument
+.I ARG
+is a boolean value, "true" or "false", that indicates if a user  will
+attend a pre-event activity.
+.TP
+.BI \-\-seriesID\  ARG
+The argument
+.I ARG
+is an integer providing a series ID.  The value -1 is reserved and matches
+any series.
+.TP
+.BI \-\-spattern\  ARG
+The argument
+.I ARG
+is a pattern used to match the label of a series. This is an SQL
+pattern, so that '%' is a wildcard matching any number of characters
+and '_' matches a single character.
+.TP
+.BI \-\-attendeeState\  ARG
+The argument
+.I ARG
+is an string representing the state of an entry in the attendee table.
+Allowed values are ACTIVE, CANCELLING, and CANCELLED.
+.SH MESSAGING OPTIONS
+.TP
+.B \-\-noCalendars
+indicates that messages will not contain calendar attachments
+.TP
+.BI \-\-template\  ARG
+The argument
+.I ARG
+is a file name for a template. Templates are text files that contain
+the content of messages. The format is described in
+.BR ecdb (1).
+.TP
+.BI \-\-mediaType\  ARG
+The argument
+.I ARG
+is the media type of the file created using the template provided by
+the
+.B \-\-template
+option.
+.TP
+.BI \-\-altTemplate\  ARG
+The argument
+.I ARG
+is a file name for a template. Templates are text files that contain
+the content of messages. The format is described in
+.BR ecdb (1).
+Messages can contain two alternative versions and this template provides
+the second of the two.
+.TP
+.BI \-\-altMediaType\  ARG
+The argument
+.I ARG
+is the media type of the file created using the template provided by
+the
+.B \-\-altTemplate
+option.
+.TP
+.BI \-\-subject\  ARG
+The argument
+.I ARG
+is a string containing the subject of a message.
+.TP
+.B \-\-copy
+This option indicates that calendar appointments should be copied
+to the system clipboard.
+.TP
+.B \-\-send
+This option indicates that calendar appointments and/or messages should
+be sent to email addresses or a cell-phone's MMS gateway.
+.TP
+.BI \-\-saveToDir \  ARG
+This option indicates that calendar appointments should be saved in the
+directory
+.IR ARG .
+.SH COMMAND OPTIONS
+.TP
+.B \-\-addCarrier
+This command adds a new carrier. The
+.B \-\-carrier
+argument is needed.
+.TP
+.B \-\-listCarriers
+This command lists the carriers.
+The non-option arguments can be a list of carriers or a list of
+carrierIDs (if the
+.B \-i
+option has been provided).
+.TP
+.B \-\-deleteCarrier
+This command deletes a carrier. The
+.B \-\-carrierID
+or
+.B \-\-carrier
+argument is needed.
+.TP
+.B \-\-setCarrier
+This command sets the name of a carrier. The
+.B \-\-carrier
+and
+.B \-\-carrierID
+options must be provided.
+.TP
+.B \-\-listCarrierMap
+This command lists the carrier map. With no options, all rows are
+listed.  One may provide the options
+.B \-\-carrier
+(which can include SQL wildcards) and
+.B \-\-countryPrefix
+(which must be exact).
+.TP
+.B \-\-setCarrierMapping
+This command sets an entry in the carrier mapping table.
+The option
+.B \-\-countryPrefix
+sets a country prefix, the options
+.B \-\-carrierID
+or
+.B \-\-carrier
+specify the carrier (only the carrier ID appears in this table), and
+the option
+.B \-\-idomain
+provides the internet domain name placed in the table.
+.TP
+.B \-\-addUser
+This command adds a user to the table. Options are
+.BR \-\-firstName ,
+.BR \-\-lastName ,
+.BR \-\-lastNameFirst ,
+.BR \-\-title ,
+.BR \-\-emailAddr ,
+.BR \-\-countryPrefix ,
+.BR \-\-cellNumber,
+and
+.B \-\-carrierID
+or
+.BR \-\-carrier .
+.TP
+.B \-\-listUsers
+This command lists information about users.
+With the
+.B \-i
+option, the non-option arguments are a list of user IDs. Otherwise
+the non-option arguments are SQL patterns.  If a pattern contains only
+digits, it is treated as a cell-phone number, excluding the country
+prefix.  If the pattern starts with '+', the '+' is removed and the
+pattern is treated like an SQL pattern with wildcards, matching the
+concatenation of an country prefix and a cell-phone number.  If the
+pattern is anything else, it must match the first name, last name,
+or email address.
+As a special case, the
+.B \-\-upattern
+option is treated as if the non-option argument list contained a single
+pattern.
+.TP
+.B \-\-getCellEmail
+This command prints a user's email address.
+One must specify either the argument
+.B \-\-userID
+or the argument
+.B \-\-upattern
+so that only a single row in the UserInfo table matches.
+.TP
+.B \-\-deleteUser
+This command deletes a user. One may specify the user to delete by
+providing a
+.B \-\-userID
+option, a
+.B \-\-upattern
+option,
+or an
+.B \-i
+option with the user IDs provided by the non-option arguments.
+A
+.B upattern
+argument is an SQL pattern, where '%' is used as a wildcard and '_' matches
+any character. This pattern can match a first name, last name, email address,
+or cell-phone number (excluding the country prefix).
+If there are multiple pattern matches, the deletion is performed interactively.
+.TP
+.B \-\-setUser
+This command sets values in a row in the UserInfo table. The row is
+determined by the
+.B \-\-userID
+option.  The columns that can be set are determined by the presence of
+the options
+.BR \-\-firstName ,
+.BR \-\-lastName ,
+.BR \-\-lastNameFirst  ,
+.BR \-\-title  ,
+.BR \-\-emailAddr  ,
+.BR \-\-countryPrefix  ,
+.BR \-\-cellNumber  ,
+.BR \-\-carrierID  ,
+and
+.BR \-\-status  .
+If
+.B \-\-carrier
+is used instead of
+.BR \-\-carrierID ,
+the carrier ID is looked up based on the value of
+.B \-\-carrier
+option's argument.
+.TP
+.B \-\-addOwner
+This command adds a new row to the owner table. The options it
+uses are
+.BR \-\-label ,
+.BR \-\-summary ,
+and
+.BR \-\-idomain .
+.TP
+.B \-\-listOwners
+This command lists the owner table.  If the
+.B \-i
+option is present, the non-option arguments should be lists of owner IDs.
+Otherwise the non-option lists are SQL patterns that are matched with
+labels. If none are provided, the full table is listed.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character.
+As a special case, the
+.B \-\-opattern
+option is treated as if the non-option argument list contained a single
+pattern.
+.TP
+.B \-\-deleteOwner
+This command deletes a row from the owner table. The options are
+.B \-\-ownerID
+if an owner ID is provided,
+.B \-\-opattern
+if an SQL pattern that will match an owner's label is provided,
+or a list of non-option arguments containing ownerIDs if
+the
+.B \-i
+option is provided. With pattern matching, if there are multiple matches
+the deletion is performed interactively.
+.TP
+.B \-\-setOwner
+This command sets the values for columns in a row from the owner table.
+The row is determined by the argument provided by the
+.B \-\-ownerID
+option.  Alternatively the
+.B \-\-opattern
+option can be used to provide an SQL pattern for searching labels.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character.
+.TP
+.B \-\-addLocation
+This command adds a row to the location table. The user must provide
+two options:
+.B \-\-label
+and
+.B \-\-location
+.TP
+.B \-\-listLocations
+This command lists rows from the location table. If the
+.B \-i
+option is provided, the rows listed are those whose location IDs match
+those provided by the non-option arguments.
+Otherwise the non-option arguments are assumed to be SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character.
+As a special case, the
+.B \-\-lpattern
+option is treated as if the non-option argument list contained a single
+pattern.
+.TP
+.B \-\-deleteLocation
+This command deletes a row from the location table.
+The option
+.BR \-\-locationID ,
+or alternatively
+.BR \-\-lpattern ,
+determines which row is affected. if
+.B \-\-lpattern
+is used, it must be an SQL pattern and a row will be determined by
+matching the label.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character.
+.TP
+.B \-\-setLocation
+This command sets the values in the label or location columns of the
+location table for a specific location ID. The option
+.B \-\-locationID
+determines which row is modified. The options
+.B \-\-label
+and/or
+.B \-\-location
+provide the values to which their respective columns will be set.
+.TP
+.B \-\-addFirstAlarm
+This command adds a row to the first-alarm table. The options
+that must be provided are
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-locationID
+or
+.BR \-\-lpattern ,
+.BR \-\-eventTime ,
+.BR \-\-weekday ,
+and
+.BR \-\-alarmTime .
+When a pattern is provided instead of an ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. For owner and location tables, the labels are matched.
+For the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and cell phone
+number, a numeric pattern is matched with a cell phone number, and
+a non numeric pattern is matched with either the first name, last name, or
+email address.
+The options
+.B \-\-forEmail
+and
+.B \-\-forPhone
+have default values of true, and that can be modified if desired.
+.TP
+.B \-\-listFirstAlarms
+This command lists rows from the first-alarm table. The options
+that determine which rows are shown are
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-locationID
+or
+.BR \-\-lpattern ,
+.BR \-\-eventTime ,
+and
+.BR \-\-weekday .
+The user ID is required and if a pattern is used, it must match a
+single user.  The other IDs are optional. If an optional ID is not
+provided, that ID does not restrict the rows that will be shown.  When
+a pattern is provided instead of an ID, the pattern is used to look up
+the corresponding ID. The patterns are SQL patterns.  For SQL
+patterns, a '%' is a wild-card character and a "_" matches any single
+character. For owner and location tables, the labels are matched.  For
+the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and
+cell phone number, a numeric pattern is matched with a cell phone
+number, and a non numeric pattern is matched with either the first
+name, last name, or email address.
+.TP
+.B \-\-deleteFirstAlarms
+This command deletes rows from a table. The options
+that must be provided are
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-locationID
+or
+.BR \-\-pattern,
+.BR \-\-eventTime ,
+and
+.BR \-\-weekday .
+When a pattern is provided instead of an ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. For owner and location tables, the labels are matched.
+For the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and cell phone
+number, a numeric pattern is matched with a cell phone number, and
+a non numeric pattern is matched with either the first name, last name, or
+email address. If multiple rows match a pattern, the deletion is interactive.
+.TP
+.B \-\-setFirstAlarm
+This commands sets the values of a row in the alarmTime, forEmail,
+and forPhone columns.  The new values are set by the
+.BR \-\-alarmTime  ,
+.BR \-\-forEmail  ,
+.B \-\-forPhone
+options. Any of these that are not provided are ignored.
+The options that determine which rows are selected are
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-locationID
+or
+.BR \-\- lpattern ,
+.BR \-\-eventTime ,
+and
+.BR \-\-weekday .
+The user ID, or a pattern that matches a single user, is required. The
+other IDs are optional. If an optional ID is not provided, that ID
+does not restrict the rows that will be shown.  When a pattern is
+provided instead of an ID, the pattern is used to look up the
+corresponding ID. The patterns are SQL patterns.  For SQL patterns,
+a '%' is a wild-card character and a "_" matches any single
+character. For owner and location tables, the labels are matched.  For
+the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and
+cell phone number, a numeric pattern is matched with a cell phone
+number, and a non numeric pattern is matched with either the first
+name, last name, or email address.
+.TP
+.B \-\-addSecondAlarm
+This command adds a row to the second-alarm table.
+Several options are required:
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-locationID
+or
+.BR \-\-lpattern ,
+and
+.BR \-\-offset .
+When a pattern is provided instead of an ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. For owner and location tables, the labels are matched.
+For the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and cell phone
+number, a numeric pattern is matched with a cell phone number, and
+a non numeric pattern is matched with either the first name, last name, or
+email address.
+The options
+.B \-\-forEmail
+and
+.B \-\-forPhone
+have default values of false and true respectively, and that can be
+modified if desired.
+.TP
+.B \-\-listSecondAlarms
+This command lists rows in the second-alarm table
+Several options are recognized:
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+and
+.B \-\-locationID
+or
+.BR \-\-lpattern .
+If an ID or pattern is not provided, that pattern or ID does not
+filter the rows that will be listed. A user ID option, however, is
+required and must match a single user.
+When a pattern is provided instead of an ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. For owner and location tables, the labels are matched.
+For the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and cell phone
+number, a numeric pattern is matched with a cell phone number, and
+a non numeric pattern is matched with either the first name, last name, or
+email address.
+.TP
+.B \-\-deleteSecondAlarm
+.TQ
+.B \-\-deleteSecondAlarms
+This command deletes a row (or rows for the plural form of the
+command) from the second-alarm table.
+Several options are used to find the row:
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-locationID
+or
+.BR \-\-lpattern .
+The options for the owner or location are optional for the plural form
+and not providing those will result in multiple rows being selected
+for deletion.  When a pattern is provided instead of an ID, the
+pattern is used to look up the corresponding ID. The patterns are SQL
+patterns.  For SQL patterns, a '%' is a wild-card character and a "_"
+matches any single character. For owner and location tables, the
+labels are matched.  For the user-info table, a pattern starting with
+a "+" (with the '+' ignored) is matched with the concatenation of a
+country prefix and cell phone number, a numeric pattern is matched
+with a cell phone number, and a non numeric pattern is matched with
+either the first name, last name, or email address.
+If multiple rows match a pattern, the deletion is interactive.  If a
+user ID is explicitly provided, it must match an existing row.
+.TP
+.B \-\-setSecondAlarm
+This command sets values in a row from the second-alarm table.
+Several options are required to find the row:
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-locationID
+or
+.BR \-\-lpattern .
+When a pattern is provided instead of an ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. For owner and location tables, the labels are matched.
+For the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and cell phone
+number, a numeric pattern is matched with a cell phone number, and
+a non numeric pattern is matched with either the first name, last name, or
+email address.
+The remaining options are optional:
+.BR \-\-offset ,
+.BR \-\-forEmail ,
+and
+.BR \-\-forPhone .
+These provide the new values. If absent, the corresponding column is not
+changed.
+.TP
+.B \-\-addPreEventDefault
+This command adds a row to the pre-event-default table.
+Several options are required:
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+and
+.BR \-\-peDefault .
+When a pattern is provided instead of an ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. For owner and location tables, the labels are matched.
+For the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and cell phone
+number, a numeric pattern is matched with a cell phone number, and
+a non numeric pattern is matched with either the first name, last name, or
+email address. If multiple rows match a pattern, the deletion is interactive.
+.TP
+.B \-\-deletePreventDefault
+.TQ
+.B \-\-deletePreEventDefaults
+.TP
+.B \-\-listPreEventDefaults
+Several options may be used:
+.B \-\-userID
+or
+.BR \-\-upattern ,
+and
+.B \-\-ownerID
+or
+.BR \-\-opattern .
+Either
+.B \-\-userID or
+.B \-\-upattern
+is required. The other case is optional.
+When a pattern is provided instead of an ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. For owner and location tables, the labels are matched.
+For the user-info table, a pattern starting with a "+" (with the '+'
+ignored) is matched with the concatenation of a country prefix and cell phone
+number, a numeric pattern is matched with a cell phone number, and
+a non numeric pattern is matched with either the first name, last name, or
+email address.
+.TP
+.B \-\-addEvent
+This command adds a new row to the event table. The required options are
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.BR \-\-label ,
+.BR \-\-description .
+When a pattern is provided instead of an owner ID, the pattern is used to
+look up the corresponding ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character.  The pattern must uniquely identify an owner ID.
+.TP
+.B \-\-listEvents
+This command lists events.  The options are
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+and
+.BR \-i .
+All are optional.
+When a pattern is provided instead of an owner ID, the pattern is used to
+look up the corresponding owner ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character.  If an owner ID is specified or found, all the events
+for that owner ID are lists. Otherwise if the
+.B \-i
+option is used, the non-option arguments will be a list of event IDs and
+the rows for those IDs will be listed. Finally if no options are provided,
+the non-option arguments will be a list of SQL patterns that will be
+matched against owner-table labels.  If there are no non-option arguments,
+all rows will be listed.
+.TP
+.B \-\-deleteEvent
+This command deletes rows from the event table. The options are
+.BR \-\-eventID ,
+.BR \-\-epattern ,
+or
+.BR \-i .
+An epattern is provided, the match uses case-insensitive pattern matching
+using SQL patterns where a '%' is a wildcard and '_' matches any one
+character.  If there are multiple matches, the program runs interactively.
+With the
+.B \-i
+option, the non-option arguments are the event IDs for the rows that are to
+be deleted.
+.TP
+.B \-\-setEvent
+This command sets the value in various columns of a row in the event table.
+The row is determined by the options
+.B \-\-eventID
+or
+.BR \-\-epattern .
+When a pattern is provided instead of an event ID, the pattern is used to
+look up the corresponding event ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. The pattern must uniquely determine a single event ID.
+The remaining options
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.BR \-\-label ,
+and
+.B \-\- description
+specify new values for an ownerID, label, or description. If an opattern
+is provided instead of an owner ID, that pattern is used to look up the
+owner ID.  These remaining options provide the columns and values to set.
+.TP
+.B \-\-addInstance
+This command adds a row to the event-instance table.
+The options that can be used are
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.B \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-preEventType ,
+.BR \-\-preEventOffset ,
+.BR \-\-startDate ,
+.BR \-\-startTime ,
+.BR \-\-endDate ,
+.BR \-\-endTime ,
+.BR \-\-status .
+As with other commands, the pattern options are SQL patterns where "%"
+is treated as a wildcard and "_" matches any single character.  A
+pattern can be used to look up the corresponding ID.  If a pattern is
+used to look up an event ID, one may need the ownerID as well, but the
+ownerID does not appear in the event-instance table itself.
+If
+.B status
+is not provided, the default value is
+.BR CONFIRMED .
+.TP
+.B \-\-listInstances
+This command lists rows from the event-instance table. The options that
+can be used are the following.
+First, if there is an
+.B \-\-instanceID
+option whose value is not -1, that is used to list a single row from
+the table. Similarly, if the
+.B \-i
+or
+.B \-\-id
+option is present, the rows listed are those whose instance IDs are given
+by the non-option arguments, which must be non-negative integers.
+Otherwise the following options are recognized:
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.B \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-preEventType ,
+.BR \-\-preEventOffset ,
+.BR \-\-startDate ,
+.BR \-\-startTime ,
+.BR \-\-endDate ,
+.BR \-\-endTime ,
+.BR \-\-status .
+When a pattern is provided instead of an event ID, the pattern is used to
+look up the corresponding event ID. The patterns are SQL patterns.
+For SQL patterns, a '%' is a wild-card character and a "_" matches any
+single character. If a pattern is used, it must be associated with a single
+ID. The search results are filtered based on the options that are provided.
+If too many are provided and they are not consistent with each other, the
+resulting list may be an empty one.
+.TP
+.B \-\-deleteInstance
+The command deletes rows from the event-instance table.
+If the option
+.B \-\-instanceID
+is present, the corresponding row will be deleted.
+If the
+.B \-i
+or
+.B \-\-id
+option is present, the non-option arguments must be
+instance IDs, and those will be deleted from the event-instance table.
+Otherwise the following options can be used:
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.B \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-startDate ,
+and
+.BR \-\-startTime .
+If a pattern is provided, the corresponding ID is obtained by
+finding a row whose label matches the pattern. As SQL patterns,
+a "%" is a wildcard and "_" matches any single character.
+The remaining options, if not null, (or -1 for an ID), place
+restrictions on the rows that can be deleted.  If there are multiple
+matches, the deletion is interactive.
+.TP
+.B \-\-setInstance
+This command sets field in the event-instance table.
+The  option
+.B \-\-instanceID
+is used to look up a row in the event instance table.
+The other options that can be used are
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.B \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-preEventType ,
+.BR \-\-preEventOffset ,
+.BR \-\-startDate ,
+.BR \-\-startTime ,
+.BR \-\-endDate ,
+.BR \-\-endTime ,
+.BR \-\-status .
+The
+.B \-\-ownerID
+option (the
+.B \-\- opattern
+can be used to look up the
+.B \-\-ownerID
+option) can be used to help look up the
+.B \-\-eventID
+option when the
+.B \-\- epattern
+option is used instead. When a pattern is used,
+a '%' is a wild-card character and a "_" matches any
+single character. If a pattern is used, it must be associated with a single
+ID. The remaining options, if present provide the new values for the
+corresponding columns.
+.TP
+.B \-\-addSeries
+This command adds a series to the series table. The options, are
+.B \-\-ownerID
+or
+.B \-\-owner
+and
+.BR \-\-label .
+If the
+.B \-\-ownerID
+option  is not provided, the
+.B \-\-owner
+option can be used to find the ownerID. This option's argument is an
+SQL pattern where a '%' is a wild-card character and a "_" matches any
+single character. The match is not case sensitive.  A missing option will
+result in an error.
+.TP
+.B \-\-listSeries
+This command lists rows from the series table. With no additional options,
+all rows are lists. If the
+.B \-i
+option is provided, the non-option arguments are expected to be
+of series IDs.  Each row with the corresponding ID will be listed.
+Otherwise the options are
+.B \-\-ownerID
+or
+.B \-\-owner
+and
+.BR \-\-spattern .
+If the
+.B \-\-ownerID
+option is provided, the listing will include only those rows that have
+that owner ID. If the
+.B \-\-ownerID
+option is not provided or if it has the value -1,
+the
+.B \-\- owner
+option is checked.  If this is provided, it is used to look up an
+ownerID. The argument
+.B opattern
+is an SQL pattern where a '%' is a wild-card character and a "_"
+matches any single character. The match is not case sensitive. If the
+argument is missing, or does not match any rows, all rows are shown.
+If the argument matches multiple rows, an exception is thrown.
+The
+.B \-\-spattern
+option is also an SQL pattern where a '%' is a wild-card character and a "_"
+matches any single character. This match is also not case sensitive.
+The matching rows will be listed.
+.TP
+.B \-\-deleteSeries
+This command deletes one or more rows from the series table. If
+a
+.B \-\-seriesID
+option is provided, and is not -1, the matching row will be deleted.
+If the
+.B \-\-spattern
+option is provided, it will be used to find series to delete.
+This option is an SQL pattern where a '%' is a wild-card character and a "_"
+matches any single character. The match is not case sensitive, but it
+may be restricted if an
+.B \-\-ownerID
+or
+.B \-\-opattern
+option is provided.  If the
+.B \-\-ownerID
+option is provided with a value other than -1, that constrains the
+rows that are deleted to those with a matching owner ID.  If the owner ID
+is not explicitly provided,
+the
+.B \-\-owner
+option can be used to find it (it must produce a single owner ID). The
+.B \-\-owner
+option is also an SQL pattern as defined above. If no owner constraint
+is provided, there is no constraint based on the owner.
+Next, the
+.B \-\-spattern
+option is used to find rows to delete. This option is also an SQL pattern
+as described above.  If there are multiple matches, the deletion is
+interactive.
+Finally, if none of these options are provided but the
+.B \-i
+option was used, the non-option arguments must be series IDs and the
+corresponding rows will be deleted.
+.TP
+.B \-\-setSeries
+This command sets the values of ownerID and/or label columns in the series table
+for a specified row. The row is determined by the
+.B \-\-seriesID
+option. If not explicitly provided the
+.B \-\-ownerID
+or
+.B \-\-opattern
+options can be used to find the owner ID and then the ownerID
+and a
+.B \-\-spattern
+option can be used to the find series ID.  These patterns are SQL
+patterns where a '%' is a wild-card character and a "_" matches any
+single character, using a case-insensitive match to the existing series label.
+After the series ID is determined, the
+.B \-\-ownerID
+option (if not -1) and
+the
+.B \-\-label
+option (if not null) will provide updated values for the row's
+seriesID and label columns.
+.TP
+.B \-\-addSeriesInst
+This command adds a row to the series-instance table. One
+can provide the data necessary for creating a row by using the
+options
+.B \-\-seriesID
+and
+.BR \-\-instanceID .
+Of these are not known in advance, one can use a combination
+of the options
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.BR \-\-spattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-startDate ,
+.BR \-\-startTime .
+All the patterns are SQL patterns where "%" is treated as a wildcard
+and "_" matches any single character, and the rows selected are based on
+a case-insensitive search. The options chosen must result in a unique
+choice for the seriesID and instance ID.
+.TP
+.B \-\-listSeriesInst
+This command lists the series instance table. With no other options,
+all the rows in this table are lists.  The rows can be filtered by
+using the following options:
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.BR \-\-spattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-startDate ,
+.BR \-\-startTime .
+All the patterns are SQL patterns where "%" is treated as a wildcard
+and "_" matches any single character, and the rows selected are based on
+a case-insensitive search. The options chosen must result in a unique
+choice for either the seriesID or the instance ID (or both). One may
+also supply
+.B \-\-seriesID
+or
+.B \-\-isntanceID
+explicitly.  In this case, these IDs will not be generated based on other
+options.
+.TP
+.B \-\-deleteSeriesInst
+This command deletes rows from the series-instance table.
+One can uniquely specify a row by providing either the
+.B \-\-seriesID
+and
+.B \-\-instanceID
+options.  If either of these is -1, multiple rows are considered and
+the deletion is interactive.
+One can choose these IDs indirectly by using the options
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.BR \-\-spattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-startDate ,
+.BR \-\-startTime .
+All the patterns are SQL patterns where "%" is treated as a wildcard
+and "_" matches any single character, and the rows selected are based on
+a case-insensitive search.  If there are multiple matches (e.g., because
+there is not a unique series ID or instance ID), the deletion is performed
+interactively.
+.TP
+.B \-\-addAttendee
+This command adds a new row to the attendee table. A user ID and instance ID
+are required.  The user ID can be provided by the option
+.B \-\-userID
+or
+.BR \-\-upattern .
+Similarly the instance ID can be provided by the option
+.B \-\-instanceID
+or by providing some combination of the following:
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.B \-\-locationID
+or
+.BR \-\-location ,
+.BR \-\-startDate ,
+.BR \-\-startTime .
+Enough fields must be provided so that the only match is a unique
+instance ID. All the patterns are SQL patterns where "%" is treated as
+a wildcard and "_" matches any single character, and the rows selected
+are based on a case-insensitive search.
+.TP
+.B \-\-listAttendees
+This command lists rows from the attendees table.  The options that are
+recognized are
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.BR \-\-instanceID ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.BR \-\-startDate ,
+.BR \-\-startTime ,
+.B \-\-seriesID
+or
+.B \-\-spattern .
+All the patterns are SQL patterns where "%" is treated as
+a wildcard and "_" matches any single character, and the rows selected
+are based on a case-insensitive search. If an ID is provided explicitly,
+the corresponding pattern, if present, is ignored.
+.TP
+.B \-\-deleteAttendee
+This option deletes rows from the attendee table. The options that are
+recognized are
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.BR \-\-instanceID ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.BR \-\-startDate ,
+.BR \-\-startTime ,
+.B \-\-seriesID
+or
+.B \-\-spattern .
+All the patterns are SQL patterns where "%" is treated as
+a wildcard and "_" matches any single character, and the rows selected
+are based on a case-insensitive search. If an ID is provided explicitly,
+the corresponding pattern, if present, is ignored. If there are multiple
+matches, the deletion is performed interactively.
+.TP
+.B \-\-setAttendee
+This command modifies a row in the attendees table. The table's key
+consists of the values in its userID column and its instanceID column.
+The columns for the values that can be modified are the
+attendeeState column and the seriesID column. The options that are
+recognized are
+.B \-\-userID
+or
+.BR \-\-upattern ,
+.BR \-\-instanceID ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.B \-\-eventID
+or
+.BR \-\-epattern ,
+.BR \-\-startDate ,
+.BR \-\-startTime ,
+.B \-\-seriesID
+or
+.BR \-\-spattern ,
+.BR \-\-attendeeState .
+All the patterns are SQL patterns where "%" is treated as
+a wildcard and "_" matches any single character, and the ID is then
+the ID for the row with a field that matches the pattern.  The options
+must be such that there is a unique value for the userID and instanceID
+that matches precisely one row in the attendee table. Determining the
+user ID and the instance ID does not make use of the
+.B \-\-seriesID
+or the
+.B \-\-spattern
+options.  If the
+.B \-\-seriesID
+option has a value of -1 or is missing,
+or if the
+.B \-\-attendeeState
+option is missing, the corresponding column for the matching row is not
+modified. Normally one should avoid modifying the seriesID field
+directly.
+.TP
+.B \-\-applySeries
+This option applies a series for a particular user. The instances associated
+with the series will be added to the attendee table for that user.
+The options are
+.B \-\-userID
+or
+.B \-\-upattern ,
+.B \-\-ownerID
+or
+.BR \-\-opattern ,
+.B \-\-seriesID
+or
+.BR \-\-spattern .
+All the patterns are SQL patterns where "%" is treated as
+a wildcard and "_" matches any single character, and the ID is then
+the ID for the row with a field that matches the pattern.  The options
+must be such that there is a unique value for the userID and seriesID.
+If successful, there will be a row in the attendee table for the given
+user ID and for each instance ID that is associated with the series ID.
+Previous entries will be cleaned up.
+.TP
+.B \-\-getCalendars
+This command gets a user's calendars for various events.  The user is
+determined by the option
+.B \-\-userID
+or
+.BR \-\-upattern.
+If neither is provided, all users are selected. Otherwise the selection
+must be a single user.
+The options
+.B \-\-ownerID
+or
+.B \-\-opattern
+can be used to select an owner.  When
+.B \-\- opattern
+is used, it must match a single owner.  An owner, when provided, is used
+by
+.B \-\-getCalendars
+only to filter events based on owners.
+The options
+.B eventID
+or
+.B epattern
+determine an event.  If not provided, all events will match.  All of
+the patterns are SQL patterns where "%" is treated as a wildcard and
+"_" matches any single character, and the ID is then the ID for the
+row from the corresponding table with a field that matches the
+pattern.
+The options
+.B \-\-forEmail
+and
+.B \-\-forPhone
+are mutually exclusive, and one must be provided. This determines if the
+calendars will be sent to a cellphone as an MMS message or to an email address.
+For the
+.B \-\-forEmail
+case, one may provide the following pairs of options (there are defaults):
+.B \-\-template
+and
+.BR \-\-mediaType ,
+and/or
+.B \-\-altTemplate
+and
+.BR \-\- altMediaType .
+These allow customized message texts to be provided in more than one
+format (e.g., plain text or HTML).
+If none of the following options are provided, information about what
+would be sent is printed, but nothing is actually sent.
+Except in the case of a dry run, one of the options
+.BR \-\-copy ,
+.BR \-\-send ,
+or
+.B \-\-saveToDir
+are necessary. These options copy calendar appointments to the system
+clipboard, send the appointments in a message, or save the appointments
+in files placed in a specified directory.
+.SH SEE ALSO
+.BR ecdb (5)
+.br
+.B file:/usr/share/doc/ecdb-doc/api/index.html
+
+\"  LocalWords:  ECDB ecdb fR fIOPTIONS fB fIARGS br MMS TP ARG TQ
+\"  LocalWords:  createDB createTables noHeaders carrierID idomain
+\"  LocalWords:  countryPrefix userID upattern UserInfo firstName pre
+\"  LocalWords:  lastName lastNameFirst boolean emailAddr cellNumber
+\"  LocalWords:  NOTACTIVE CANCELLED ownerID opattern locationID yyyy
+\"  LocalWords:  peDefault eventTime alarmTime forEmail forPhone
+\"  LocalWords:  eventID epattern startDate startTime endDate endTime
+\"  LocalWords:  attendingPreEvent seriesID spattern attendeeState
+\"  LocalWords:  CANCELLING noCalendars mediaType altTemplate addUser
+\"  LocalWords:  altMediaType saveToDir addCarrier listCarriers
+\"  LocalWords:  carrierIDs deleteCarrier setCarrier listCarrierMap
+\"  LocalWords:  setCarrierMapping listUsers getCellEmail deleteUser
+\"  LocalWords:  setUser addOwner listOwners deleteOwner ownerIDs
+\"  LocalWords:  setOwner addLocation listLocations lpattern addEvent
+\"  LocalWords:  deleteLocation setLocation addFirstAlarm listEvents
+\"  LocalWords:  listFirstAlarms deleteFirstAlarms setFirstAlarm
+\"  LocalWords:  addSecondAlarm listSecondAlarms deleteSecondAlarm
+\"  LocalWords:  deleteSecondAlarms setSecondAlarm addPreEventDefault
+\"  LocalWords:  deletePreventDefault deletePreEventDefaults setEvent
+\"  LocalWords:  listPreEventDefaults deleteEvent addInstance
+\"  LocalWords:  preEventType preEventOffset listInstances instanceID
+\"  LocalWords:  deleteInstance setInstance addSeries listSeries
+\"  LocalWords:  deleteSeries setSeries addSeriesInst listSeriesInst
+\"  LocalWords:  isntanceID deleteSeriesInst addAttendee setAttendee
+\"  LocalWords:  listAttendees deleteAttendee applySeries
+\"  LocalWords:  getCalendars

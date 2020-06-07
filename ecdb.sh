@@ -1,2 +1,2 @@
 #!/bin/sh
-java -p BZDEVDIR -m org.bzdev.ecdb "$@"
+java -p ECDBDIR -m org.bzdev.ecdb "$@"

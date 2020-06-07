@@ -36,6 +36,7 @@ SYS_APP_ICON_DIR = $(SYS_ICON_DIR)/scalable/$(APPS_DIR)
 SYS_MIME_ICON_DIR =$(SYS_ICON_DIR)/scalable/$(MIMETYPES_DIR)
 SYS_JARDIRECTORY = /usr/share/java
 SYS_BZDEVDIR = /usr/share/bzdev
+SYS_ECDBDIR = /usr/share/ecdb
 
 ICON_WIDTHS = 16 20 22 24 32 36 48 64 72 96 128 192 256
 
@@ -70,7 +71,7 @@ ICON_DIR = $(DESTDIR)$(SYS_ICON_DIR)
 # Installed name of the icon to use for the ECDB application
 #
 SOURCEICON = icons/ecdb.svg
-SOURCE_FILE_ICON = icons/ecdbconfig.svg
+SOURCE_FILE_ICON = icons/ecdbconf.svg
 TARGETICON = ecdb.svg
 TARGETICON_PNG = ecdb.png
 TARGET_FILE_ICON = application-x.ecdb-config.svg
@@ -85,7 +86,10 @@ EXTDIR = $(SYS_JARDIRECTORY)
 EXTDIR_SED =  $(shell echo $(EXTDIR) | sed  s/\\//\\\\\\\\\\//g)
 BZDEVDIR = $(DESTDIR)$(SYS_BZDEVDIR)
 BZDEVDIR_SED = $(shell echo $(SYS_BZDEVDIR) | sed  s/\\//\\\\\\\\\\//g)
+ECDBDIR = $(DESTDIR)$(SYS_ECDBDIR)
+ECDBDIR_SED = $(shell echo $(SYS_ECDBDIR) | sed  s/\\//\\\\\\\\\\//g)
 
+EXTJARS = javax.activation.jar javax.mail.jar
 EXTLIBS1 = $(SYS_JARDIRECTORY)/javax.activation.jar
 EXTLIBS2 = $(SYS_JARDIRECTORY)/javax.mail.jar
 
@@ -119,9 +123,8 @@ FILES = $(JFILES) $(PROPERTIES) $(RESOURCES)
 
 PROGRAM = $(JROOT_BIN)/ecdb $(JROOT_JARDIR)/ecdb.jar 
 ALL = $(PROGRAM) $(JROOT_JARDIR)/ecdb-javamail.jar \
-	$(JROOT_JARDIR)/ecdb-dryrun.jar
-
-#	ecdb.desktop $(MANS) $(JROOT_BIN)/ecdb
+	$(JROOT_JARDIR)/ecdb-dryrun.jar \
+	ecdb.desktop $(MANS) $(JROOT_BIN)/ecdb
 
 # program: $(JROOT_BIN)/ecdb $(JROOT_JARDIR)/ecdb-$(VERSION).jar
 
@@ -268,7 +271,7 @@ $(JROOT_JARDIR)/ecdb-dryrun.jar: $(JDRFILES) $(JROOT_JARDIR)/ecdb.jar
 $(JROOT_BIN)/ecdb: ecdb.sh MAJOR MINOR \
 		$(JROOT_JARDIR)/ecdb.jar
 	(cd $(JROOT); mkdir -p $(JROOT_BIN))
-	sed s/BZDEVDIR/$(BZDEVDIR_SED)/g ecdb.sh > $(JROOT_BIN)/ecdb
+	sed s/ECDBDIR/$(ECDBDIR_SED)/g ecdb.sh > $(JROOT_BIN)/ecdb
 	chmod u+x $(JROOT_BIN)/ecdb
 	for i in base desktop ejws ; do \
 	if [ "$(DESTDIR)" = "" -a ! -f $(JROOT_JARDIR)/libbzdev-$$i.jar ] ; \
@@ -279,17 +282,20 @@ $(JROOT_BIN)/ecdb: ecdb.sh MAJOR MINOR \
 $(JROOT_MANDIR)/man1/ecdb.1.gz: ecdb.1
 	mkdir -p $(JROOT_MANDIR)/man1
 	sed s/VERSION/$(VERSION)/g ecdb.1 | \
+	sed s/DATE/"`date +'%B %Y'`"/g | \
 	gzip -n -9 > $(JROOT_MANDIR)/man1/ecdb.1.gz
 
 $(JROOT_MANDIR)/man5/ecdb.5.gz: ecdb.5
 	mkdir -p $(JROOT_MANDIR)/man5
 	sed s/VERSION/$(VERSION)/g ecdb.5 | \
+	sed s/DATE/"`date +'%B %Y'`"/g | \
 	gzip -n -9 > $(JROOT_MANDIR)/man5/ecdb.5.gz
 
 
 clean:
-	rm -fr mods
+	rm -fr mods man bin
 	rm -f $(JROOT_JARDIR)/ecdb.jar
+
 
 #
 # ------------------  JAVADOCS -------------------
@@ -330,13 +336,23 @@ $(JROOT_JAVADOCS)/index.html: $(JROOT_JARDIR)/ecdb.jar $(DIAGRAMS) \
 install: all
 	install -d $(BIN)
 	install -d $(MANDIR)
-	install -d $(BZDEVDIR)
+	install -d $(ECDBDIR)
 	install -d $(MANDIR)/man1
 	install -d $(MANDIR)/man5
-	install -m 0644 $(JROOT_JARDIR)/ecdb.jar $(BZDEVDIR)
+	install -m 0644 $(JROOT_JARDIR)/ecdb.jar $(ECDBDIR)
+	install -m 0644 $(JROOT_JARDIR)/ecdb-dryrun.jar  $(ECDBDIR);
+	install -m 0644 $(JROOT_JARDIR)/ecdb-javamail.jar $(ECDBDIR);
 	install -m 0755 $(JROOT_BIN)/ecdb $(BIN)
 	install -m 0644 $(JROOT_MANDIR)/man1/ecdb.1.gz $(MANDIR)/man1
 	install -m 0644 $(JROOT_MANDIR)/man5/ecdb.5.gz $(MANDIR)/man5
+
+install-links:
+	install -d $(ECDBDIR)
+	for i in base obnaming desktop ejws ; \
+	do ln -sf $(SYS_JARDIRECTORY)/libbzdev-$$i.jar $(ECDBDIR) ; done
+	if [ -f $(EXTLIBS1) ] ; then ln -sf $(EXTLIBS1) $(ECDBDIR) ; fi
+	if [ -f $(EXTLIBS2) ] ; then ln -sf $(EXTLIBS2) $(ECDBDIR) ; fi
+
 
 install-doc: $(JROOT_JAVADOCS)/index.html
 	install -d $(API_DOCDIR)
@@ -378,13 +394,26 @@ install-desktop: all
 
 uninstall:
 	@rm $(MANDIR)/man1/ecdb.1.gz || echo ... rm ecdb.1.gz  FAILED
-	@rm $(APPDIR)/ecdb.desktop || echo ... rm ecdb.desktop FAILED
+	@rm $(MANDIR)/man5/ecdb.5.gz || echo ... rm ecdb.5.gz  FAILED
 	@rm $(BIN)/ecdb   || echo ... rm $(BIN)/ecdb FAILED
-	@rm $(APP_ICON_DIR)/$(TARGETICON)  || echo ... rm $(TARGETICON) FAILED
+	@rm $(JARDIRECTORY)/ecdb-$(VERSION).jar \
+		|| echo ... rm ecdb-$(VERSION).jar FAILED
+
+uninstall-links:
+	for i in base obnaming desktop ejws ; \
+	do rm -f $(ECDBDIR)/libbzdev-$$i.jar $(ECDBDIR) ; done
+	for i in $(EXTJARS) ; do rm -f $(ECDBDIR)/$$i ; done
+
+uninstall-doc:
+	@rm -rf $(API_DOCDIR)
+
+uninstall-desktop:
+	@rm $(APPDIR)/ecdb.desktop || echo ... rm ecdb.desktop FAILED
 	@for i in $(ICON_WIDTHS) ; do \
 	   rm $(ICON_DIR)/$${i}x$${i}/$(APPS_DIR)/$(TARGETICON_PNG) \
 		|| echo .. rm $(TARGETICON_PNG) from $${i}x$${i} FAILED; \
 	done
+	@rm $(APP_ICON_DIR)/$(TARGETICON)  || echo ... rm $(TARGETICON) FAILED
 	@rm $(MIME_ICON_DIR)/$(TARGET_FILE_ICON)  || \
 		echo ... rm $(TARGET_FILE_ICON) FAILED
 	@for i in $(ICON_WIDTHS) ; do \
@@ -392,6 +421,4 @@ uninstall:
 		|| echo rm $(TARGET_FILE_ICON_PNG) from $${i}x$${i} FAILED; \
 	done
 	@(cd $(MIMEDIR)/packages ; \
-	 rm ecdb.xml || echo rm .../webail.xml FAILED)
-	@rm $(JARDIRECTORY)/ecdb-$(VERSION).jar \
-		|| echo ... rm ecdb-$(VERSION).jar FAILED
+	 rm ecdb.xml || echo rm .../ecdb.xml FAILED)

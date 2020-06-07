@@ -549,7 +549,7 @@ GRANT SELECT on ECSCHEMA.SeriesInstance to ECOWNER, ECUSER;
 GRANT INSERT ON ECSCHEMA.CountryPrefix TO ECADMIN;
 GRANT INSERT ON ECSCHEMA.Carrier TO ECADMIN;
 GRANT INSERT ON ECSCHEMA.CarrierMap TO ECADMIN;
-GRANT INSERT ON ECSCHEMA.CellPhoneEmail TO ECOWNER;
+GRANT INSERT ON ECSCHEMA.CellPhoneEmail TO ECUSER;
 GRANT INSERT ON ECSCHEMA.UserInfo TO ECUSER;
 GRANT INSERT ON ECSCHEMA.Owner TO ECOWNER;
 GRANT INSERT ON ECSCHEMA.PreEventDefault TO ECUSER;
@@ -565,7 +565,7 @@ GRANT INSERT on ECSCHEMA.SeriesInstance to ECOWNER;
 GRANT UPDATE ON ECSCHEMA.CountryPrefix TO ECADMIN;
 GRANT UPDATE ON ECSCHEMA.Carrier TO ECADMIN;
 GRANT UPDATE ON ECSCHEMA.CarrierMap TO ECADMIN;
-GRANT UPDATE ON ECSCHEMA.CellPhoneEmail TO ECOWNER;
+GRANT UPDATE ON ECSCHEMA.CellPhoneEmail TO ECUSER;
 GRANT UPDATE ON ECSCHEMA.UserInfo TO ECADMIN;
 GRANT UPDATE ON ECSCHEMA.Owner TO ECADMIN;
 GRANT UPDATE ON ECSCHEMA.PreEventDefault TO ECADMIN;
@@ -581,7 +581,7 @@ GRANT UPDATE on ECSCHEMA.SeriesInstance to ECOWNER;
 GRANT DELETE ON ECSCHEMA.CountryPrefix TO ECADMIN;
 GRANT DELETE ON ECSCHEMA.Carrier TO ECADMIN;
 GRANT DELETE ON ECSCHEMA.CarrierMap TO ECADMIN;
-GRANT DELETE ON ECSCHEMA.CellPhoneEmail TO ECOWNER;
+GRANT DELETE ON ECSCHEMA.CellPhoneEmail TO ECUSER;
 GRANT DELETE ON ECSCHEMA.UserInfo TO ECUSER;
 GRANT DELETE ON ECSCHEMA.Owner TO ECOWNER;
 GRANT DELETE ON ECSCHEMA.PreEventDefault TO ECUSER;
@@ -754,7 +754,7 @@ SELECT countryPrefix, tbla.carrierID, carrier, idomain
 SELECT countryPrefix, tbla.carrierID, carrier, idomain
     FROM ECSCHEMA.Carrier AS tbla, ECSCHEMA.CarrierMap as tblb
     WHERE tbla.carrierID = tblb.carrierID
-          AND TRIM(tblb.countryPrefix) LIKE ?
+          AND TRIM(tblb.countryPrefix) LIKE UPPER(?)
 	  AND TRIM(tbla.carrier) LIKE UPPER(?)
     ORDER BY countryPrefix, carrier
 ]]>
@@ -764,7 +764,7 @@ SELECT countryPrefix, tbla.carrierID, carrier, idomain
  SELECT countryPrefix, tabla.carridID, carrier, idomain
     FROM ECSCHEMA.Carrier AS tbla, ECSCHEMA.CarrierMap as tblb
     WHERE tbla.carrierID = tblb.carrierID
-          AND TRIM(tblb.countryPrefix) LIKE ? AND tbla.carrierID = ?
+          AND TRIM(tblb.countryPrefix) LIKE UPPER(?) AND tbla.carrierID = ?
     ORDER BY countryPrefix, carrier
 ]]>
   </entry>
@@ -1152,7 +1152,7 @@ DELETE FROM ECSCHEMA.EventInstance WHERE instanceID = ? AND status = 'CANCELLED'
 ]]>
   </entry>
 
-  <entry key="deleteCanceledEventInstances"><![CDATA[
+  <entry key="deleteCancelledEventInstances"><![CDATA[
 DELETE FROM ECSCHEMA.EventInstance WHERE status = 'CANCELLED'
 ]]>
   </entry>
