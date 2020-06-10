@@ -7,4 +7,6 @@ setup*.sh
 setup*.sql
 *.ecdb
 test*.tpl
+bin/
+man/
 org/

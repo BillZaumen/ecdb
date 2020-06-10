@@ -13,7 +13,6 @@ release:
 	then \
 		branch=`git branch|grep '*'|sed -e 's/[*][ 	][ 	]*//'`;\
 		git tag -a v$(PKG_VERSION) -m "version $(PKG_VERSION)" ;\
-		git push origin $$branch v$(PKG_VERSION) ;\
 	else \
 		echo modified files - cannot safely tag release ;\
 		exit 1 ;\

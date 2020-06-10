@@ -337,22 +337,39 @@ install: all
 	install -d $(BIN)
 	install -d $(MANDIR)
 	install -d $(ECDBDIR)
+	install -d $(JARDIRECTORY)
 	install -d $(MANDIR)/man1
 	install -d $(MANDIR)/man5
-	install -m 0644 $(JROOT_JARDIR)/ecdb.jar $(ECDBDIR)
-	install -m 0644 $(JROOT_JARDIR)/ecdb-dryrun.jar  $(ECDBDIR);
-	install -m 0644 $(JROOT_JARDIR)/ecdb-javamail.jar $(ECDBDIR);
+	install -m 0644 $(JROOT_JARDIR)/ecdb.jar \
+		$(JARDIRECTORY)/ecdb-$(VERSION).jar
+	install -m 0644 $(JROOT_JARDIR)/ecdb-dryrun.jar \
+		$(JARDIRECTORY)/ecdb-dryrun-$(VERSION).jar;
 	install -m 0755 $(JROOT_BIN)/ecdb $(BIN)
 	install -m 0644 $(JROOT_MANDIR)/man1/ecdb.1.gz $(MANDIR)/man1
 	install -m 0644 $(JROOT_MANDIR)/man5/ecdb.5.gz $(MANDIR)/man5
 
+install-javamail: all
+	install -d $(JARDIRECTORY)
+	install -m 0644 $(JROOT_JARDIR)/ecdb-javamail.jar \
+		$(JARDIRECTORY)/ecdb-javamail-$(VERSION).jar;
+
 install-links:
+	install -d $(JARDIRECTORY)
 	install -d $(ECDBDIR)
 	for i in base obnaming desktop ejws ; \
 	do ln -sf $(SYS_JARDIRECTORY)/libbzdev-$$i.jar $(ECDBDIR) ; done
 	if [ -f $(EXTLIBS1) ] ; then ln -sf $(EXTLIBS1) $(ECDBDIR) ; fi
 	if [ -f $(EXTLIBS2) ] ; then ln -sf $(EXTLIBS2) $(ECDBDIR) ; fi
-
+	if [ -f $(SYS_JARDIRECTORY)/derby.jar ] ; then \
+		ln -sf $(SYS_JARDIRECTORY)/derby.jar $(ECDBDIR);
+	for i in ecdb ecdb-dryrun do ; \
+		if [ -h $(JARDIRECTORY)/$$i.jar ] ; \
+		then rm -f $(JARDIRECTORY)/$$i.jar ; fi ; \
+		ln -s $(JARDIRECTORY)/$$i-$(VERSION).jar \
+			$(JARDIRECTORY)/$$i.jar ; \
+		if [ -h $(ECDBDIR)/$$i.jar ] ; then rm $(ECDBDIR)/$$i.jar; fi; \
+		ln -s $(JARDIRECTORY)/$$i.jar $(ECDBDIR)/$$i.jar
+	done
 
 install-doc: $(JROOT_JAVADOCS)/index.html
 	install -d $(API_DOCDIR)
