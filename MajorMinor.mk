@@ -1,4 +1,4 @@
-1buildno:
+buildno:
 	@echo $(BUILD)
 
 pkg_buildno:
