@@ -178,24 +178,31 @@ SETUP = $(JROOT_JARDIR)/libbzdev-base.jar \
 setup: $(SETUP)
 
 $(JROOT_JARDIR)/libbzdev-base.jar:
+	mkdir -p $(JROOT_JARDIR)
 	(cd $(JROOT_JARDIR); ln -s $(SYS_BZDEVDIR)/libbzdev-base.jar . )
 
 $(JROOT_JARDIR)/libbzdev-desktop.jar:
+	mkdir -p $(JROOT_JARDIR)
 	(cd $(JROOT_JARDIR); ln -s $(SYS_BZDEVDIR)/libbzdev-desktop.jar . )
 
 $(JROOT_JARDIR)/libbzdev-ejws.jar:
+	mkdir -p $(JROOT_JARDIR)
 	(cd $(JROOT_JARDIR); ln -s $(SYS_BZDEVDIR)/libbzdev-ejws.jar . )
 
 $(JROOT_JARDIR)/libbzdev-obnaming.jar:
+	mkdir -p $(JROOT_JARDIR)
 	(cd $(JROOT_JARDIR); ln -s $(SYS_BZDEVDIR)/libbzdev-obnaming.jar . )
 
 $(JROOT_JARDIR)/javax.mail.jar:
+	mkdir -p $(JROOT_JARDIR)
 	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)javax.mail.jar . )
 
 $(JROOT_JARDIR)/javax.activation.jar:
+	mkdir -p $(JROOT_JARDIR)
 	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)javax.activation.jar . )
 
 $(JROOT_JARDIR)/derby.jar:
+	mkdir -p $(JROOT_JARDIR)
 	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)/derby.jar . )
 
 
