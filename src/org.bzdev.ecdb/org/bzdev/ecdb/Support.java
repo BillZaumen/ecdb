@@ -32,35 +32,35 @@ class Support {
 	try {
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon16.png")
+                                     .getResource("ecdbicon16.png")
                                      ))).getImage());
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon24.png")
+                                     .getResource("ecdbicon24.png")
                                      ))).getImage());
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon32.png")
+                                     .getResource("ecdbicon32.png")
                                      ))).getImage());
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon48.png")
+                                     .getResource("ecdbicon48.png")
                                      ))).getImage());
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon64.png")
+                                     .getResource("ecdbicon64.png")
                                      ))).getImage());
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon96.png")
+                                     .getResource("ecdbicon96.png")
                                      ))).getImage());
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon128.png")
+                                     .getResource("ecdbicon128.png")
                                      ))).getImage());
             iconList.add((new
                           ImageIcon((Support.class
-                                     .getResource("webnail/webnailicon256.png")
+                                     .getResource("ecdbicon256.png")
                                      ))).getImage());
         } catch (Exception e) {
             System.err.println("initialization failed - "
