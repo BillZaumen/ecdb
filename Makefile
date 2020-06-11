@@ -122,7 +122,7 @@ RESOURCES = $(wildcard src/org.bzdev.ecdb/org/bzdev/ecdb/*.tpl)
 FILES = $(JFILES) $(PROPERTIES) $(RESOURCES)
 
 PROGRAM = $(JROOT_BIN)/ecdb $(JROOT_JARDIR)/ecdb.jar 
-ALL = $(PROGRAM) $(JROOT_JARDIR)/ecdb-javamail.jar \
+ALL = $(SETUP) $(PROGRAM) $(JROOT_JARDIR)/ecdb-javamail.jar \
 	$(JROOT_JARDIR)/ecdb-dryrun.jar \
 	ecdb.desktop $(MANS) $(JROOT_BIN)/ecdb
 
