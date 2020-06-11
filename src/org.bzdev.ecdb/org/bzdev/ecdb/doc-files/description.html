@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+<HTML lang="en">
+ <STYLE TYPE="text/css">
+    BODY {
+        margin 2ex 2ex 2ex 2ex;
+    }
+  </STYLE>
+<HEAD>
+  <TITLE>Description of the ECDB package</TITLE>
+</HEAD>
+<BODY>
+<H2>Description of the ECDB package</H2>
+<P>
+  This package provides an API for initializing and manipulating a
+relational database representing an event calendar. In addition to
+methods that select, insert, update, or delete table entries, ECDB can
+generate <A HREF="https://tools.ietf.org/html/rfc5545">iCalendar</A>
+appointments and send them via email.
+<P>
+  Calendar appointments include the starting date, starting time,
+ending date, and ending time for an event, whether there is some
+activity before an event and when that starts, and two optional
+alarms, with the times set on a per-user basis.  The class will also
+send messages with or without calendar appointments to users to either
+an email address or to the user's SMS service.  Each calendar
+appointment is tagged with fields that allow a previously sent
+calendar appointment to be updated.
+<P>
+  The database tables can grouped into four catagories.  These are
+shown in the following four diagrams. In these tables, column names
+followed with "(PK)" indicate a primary key, and those whose column
+names are followed with "(FK)" denote foriegn keys. The types are Java
+types, not SQL types. The Java types used, which are useful to document
+because of the use of JDBC, are the following:
+<UL>
+  <LI><B>int</B>. The corresponding SQL type is an integer and the
+    column cannot contain null values.
+  <LI><B>Integer</B>. The corresponding SQL type is an integer type and
+    the column can contain null values.
+  <LI><B>boolean</B>. The corresponding SQL type is a boolean and the
+    column cannot contain null values
+  <LI><B>Boolean</B>. The corresponding SQL type is a boolean and the
+    column can contain null values
+  <LI><B>String</B>. The corresponding SQL type contains character data.
+  <LI><B>Date</B>. The Java type is {@link java.sql.Date} and the SQL
+    type is a date.
+  <LI><B>Time</B>. The Java type is {@link java.sql.Time} and the SQL
+    type is a date.
+  <LI><B></B>.
+</UL>
+In some diagrams, tables shown in blue (or gray if printed with a black
+and white printer) are references to tables from another diagram.
+<P>
+  The first diagram shows the tables for user data and some tables
+used to map cell phone numbers to the email address used by an SMS
+gateway provided by the user's wireless carrier:
+<CENTER>
+  <IMG SRC="user.png">
+</CENTER>
+<P>
+  The second diagram shows the tables for event owners, locations,
+events, and event instances:
+<CENTER>
+  <IMG SRC="owner.png">
+</CENTER>
+<P>
+  The third diagram shows the tables for alarms and for a default
+choice for attending activities before an event:
+<CENTER>
+  <IMG SRC="timing.png">
+</CENTER>
+<P>
+The fourth diagram shows the attendee table and tables defining
+a series:
+<CENTER>
+  <IMG SRC="attendees.png">
+</CENTER>
+
+</BODY>
+</HTML>
+
