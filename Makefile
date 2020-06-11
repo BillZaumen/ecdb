@@ -195,11 +195,11 @@ $(JROOT_JARDIR)/libbzdev-obnaming.jar:
 
 $(JROOT_JARDIR)/javax.mail.jar:
 	mkdir -p $(JROOT_JARDIR)
-	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)javax.mail.jar . )
+	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)/javax.mail.jar . )
 
 $(JROOT_JARDIR)/javax.activation.jar:
 	mkdir -p $(JROOT_JARDIR)
-	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)javax.activation.jar . )
+	(cd $(JROOT_JARDIR); ln -s $(SYS_JARDIRECTORY)/javax.activation.jar . )
 
 $(JROOT_JARDIR)/derby.jar:
 	mkdir -p $(JROOT_JARDIR)
