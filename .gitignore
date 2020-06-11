@@ -2,11 +2,9 @@
 *.class
 mods/
 BUILD/
-provider/
 setup*.sh
 setup*.sql
 *.ecdb
 test*.tpl
 bin/
 man/
-org/
