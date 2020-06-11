@@ -1,10 +1,15 @@
 *~
 *.class
-mods/
-BUILD/
+mods/**
+provider/*
+org
+!org/
+BUILD/**
 setup*.sh
 setup*.sql
 *.ecdb
+!*.ecdb/
 test*.tpl
 bin/
 man/
+src/org.bzdev.ecdb/org/bzdev/ecdb/doc-files/*.png
