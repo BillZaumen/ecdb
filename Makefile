@@ -340,7 +340,7 @@ $(JROOT_JAVADOCS)/index.html: $(JROOT_JARDIR)/ecdb.jar $(DIAGRAMS) \
 #
 # ---------------------INSTALL -------------------
 #
-install: all
+install-lib: all
 	install -d $(BIN)
 	install -d $(MANDIR)
 	install -d $(ECDBDIR)
