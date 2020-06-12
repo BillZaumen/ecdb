@@ -34,11 +34,15 @@ SYS_APPDIR = /usr/share/applications
 SYS_ICON_DIR = /usr/share/icons/hicolor
 SYS_APP_ICON_DIR = $(SYS_ICON_DIR)/scalable/$(APPS_DIR)
 SYS_MIME_ICON_DIR =$(SYS_ICON_DIR)/scalable/$(MIMETYPES_DIR)
+SYS_POPICON_DIR = /usr/share/icons/Pop
+SYS_MIME_POPICON_DIR =$(SYS_POPICON_DIR)/scalable/$(MIMETYPES_DIR)
+
 SYS_JARDIRECTORY = /usr/share/java
 SYS_BZDEVDIR = /usr/share/bzdev
 SYS_ECDBDIR = /usr/share/ecdb
 
 ICON_WIDTHS = 16 20 22 24 32 36 48 64 72 96 128 192 256
+POPICON_WIDTHS = 8 16 24 32 48 64 128 256 512
 
 # Target JARDIRECTORY - where 'make install' actually puts the jar
 # file (DESTDIR is not null when creating packages)
@@ -59,6 +63,8 @@ JAVADOCS = $(DESTDIR)$(SYS_JAVADOCS)
 MIMEDIR = $(DESTDIR)$(SYS_MIMEDIR)
 APPDIR = $(DESTDIR)$(SYS_APPDIR)
 MIME_ICON_DIR = $(DESTDIR)$(SYS_MIME_ICON_DIR)
+POPICON_DIR = $(DESTDIR)$(SYS_POPICON_DIR)
+MIME_POPICON_DIR=$(DESTDIR)$(SYS_MIME_POPICON_DIR)
 # Icon directory for applications
 #
 APP_ICON_DIR = $(DESTDIR)$(SYS_APP_ICON_DIR)
@@ -415,6 +421,20 @@ install-desktop: all
 	  rm tmp.png ; \
 	done
 	install -m 0644 ecdb.desktop $(APPDIR)
+
+install-pop:
+	install -d $(MIME_POPICON_DIR)
+	install -m 0644 -T $(SOURCE_FILE_ICON) \
+		$(MIME_POPICON_DIR)/$(TARGET_FILE_ICON)
+	for i in $(POPICON_WIDTHS) ; do \
+	    install -d $(POPICON_DIR)/$${i}x$${i}/$(MIMETYPES_DIR) ; \
+	done;
+	for i in $(POPICON_WIDTHS) ; do \
+	  inkscape -w $$i -e tmp.png $(SOURCE_FILE_ICON) ; \
+	  install -m 0644 -T tmp.png \
+	  $(POPICON_DIR)/$${i}x$${i}/$(MIMETYPES_DIR)/$(TARGET_FILE_ICON_PNG); \
+	  rm tmp.png ; \
+	done
 
 uninstall:
 	@rm $(MANDIR)/man1/ecdb.1.gz || echo ... rm ecdb.1.gz  FAILED
