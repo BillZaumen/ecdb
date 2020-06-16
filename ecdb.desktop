@@ -11,7 +11,10 @@ Type=Application
 Icon=/usr/share/icons/hicolor/scalable/apps/ecdb.svg
 Categories=Application;Graphics;
 StartupNotify=true
-Actions=config
+Actions=config;init
 [Desktop Action config]
 Name = New ECDB Configuration
 Exec=ecdb --configure
+[Desktop Action init]
+Name = Initialize ECDB Database
+Exec=ecdb --createWithGUI

@@ -9797,7 +9797,7 @@ public class ECDB implements AutoCloseable {
 
 	boolean config = false;
 	boolean createDB = false;
-	boolean allowRoles = false;
+	// boolean allowRoles = false;
 	boolean createTables = false;
 	boolean noSetupOptions = true;
 	boolean noCommands = true;
@@ -10114,8 +10114,25 @@ public class ECDB implements AutoCloseable {
 		noSetupOptions = false;
 	    } else if (argv[ind].equals("--create")) {
 		createDB = true;
-		allowRoles = true;
+		// allowRoles = true;
 		createTables = true;
+		noSetupOptions = false;
+	    } else if (argv[ind].equals("--createWithGUI")) {
+		// Not documented: used by ECDB.desktop
+		Support.InitData initData = null;
+		try {
+		    initData = Support.getInitData();
+		} catch (Exception e) {
+		    System.err.println("ECDB: " + e.getMessage());
+		    System.exit(1);
+		}
+		if (initData == null) {
+		    System.out.println("ECDB: user canceled initialization");
+		    System.exit(0);
+		}
+		f = initData.f;
+		createDB = initData.createDB;
+		createTables = initData.createTables;
 		noSetupOptions = false;
 	    } else if (argv[ind].equals("--addCarrier")) {
 		addCarrier = true;

@@ -3318,4 +3318,65 @@ class Support {
 		frame.setVisible(true);
 	    });
     }
+
+    static class InitData {
+	public File f = null;
+	public boolean createDB = false;
+	public
+	    boolean createTables = false;
+	boolean cancel = false;
+    }
+
+    public static InitData getInitData() throws Exception {
+	final InitData initData = new InitData();
+	SwingUtilities.invokeAndWait(() -> {
+		JPanel panel = new JPanel(new GridLayout(3,1));
+		JCheckBox cb1 = new JCheckBox("Request configuration file");
+		JCheckBox cb2 = new JCheckBox("Create database");
+		JCheckBox cb3 = new JCheckBox("Create database tables");
+		panel.add(cb1);
+		panel.add(cb2);
+		panel.add(cb3);
+		int status = JOptionPane
+		    .showConfirmDialog(null, panel,
+				       "ECDB Initialization Options",
+				       JOptionPane.OK_CANCEL_OPTION,
+				       JOptionPane.PLAIN_MESSAGE);
+		if (status != JOptionPane.OK_OPTION) {
+		    initData.cancel = true;
+		    return;
+		}
+		if (cb1.isSelected()) {
+		    File cdir = null;
+		    try {
+			cdir = new File(System.getProperty("user.dir"))
+			    .getCanonicalFile();
+		    } catch (IOException e) {
+			System.err.println("ECDB: " + e.getMessage());
+			System.exit(1);
+		    }
+		    JFileChooser fc = new JFileChooser(cdir);
+		    FileNameExtensionFilter filter = new FileNameExtensionFilter
+			("ECDB Config", "ecdb");
+		    fc.setFileFilter(filter);
+		    fc.setAcceptAllFileFilterUsed(false);
+		    int fstatus = fc.showOpenDialog(null);
+		    if (fstatus == JFileChooser.APPROVE_OPTION) {
+			initData.f = fc.getSelectedFile();
+		    } else {
+			initData.cancel = true;
+			return;
+		    }
+		}
+		if (cb2.isSelected()) {
+		    initData.createDB = true;
+		}
+		if (cb3.isSelected()) {
+		    initData.createTables = true;
+		}
+		return;
+	    });
+	if (initData.cancel == true) return null;
+	return initData;
+    }
 }
