@@ -418,7 +418,7 @@ install-desktop: all
 	for i in $(ICON_WIDTHS2x) 512 ; do \
 		ii=`expr 2 '*' $$i` ; \
 		install -d $(ICON_DIR)/$${i}x$${i}@2x/$(APPS_DIR) ; \
-		inkscape -w $$ii --export-filname=tmp.png $(SOURCEICON) ; \
+		inkscape -w $$ii --export-filename=tmp.png $(SOURCEICON) ; \
 		install -m 0644 -T tmp.png \
 		    $(ICON_DIR)/$${i}x$${i}@2x/$(APPS_DIR)/$(TARGETICON_PNG); \
 		rm tmp.png ; \
