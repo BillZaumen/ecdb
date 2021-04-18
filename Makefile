@@ -255,8 +255,8 @@ $(JROOT_JARDIR)/ecdb.jar: $(FILES) $(PROPERTIES) $(RESOURCES) $(SETUP)
 	cp $(PROPERTIES) $(ECDB_JDIR)
 	cp $(RESOURCES) $(ECDB_JDIR)
 	for i in $(ICON_WIDTHS) ; do \
-		inkscape -w $$i -e $(ECDB_JDIR)/ecdbicon$${i}.png \
-		icons/ecdb.svg ; \
+		inkscape -w $$i --export-filename \
+		$(ECDB_JDIR)/ecdbicon$${i}.png icons/ecdb.svg ; \
 	done
 	mkdir -p $(JROOT_JARDIR)
 	rm -f $(JROOT_JARDIR)/ecdb.jar

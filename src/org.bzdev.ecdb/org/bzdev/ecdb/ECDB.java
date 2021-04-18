@@ -232,7 +232,8 @@ public class ECDB implements AutoCloseable {
 		    Thread ot = new Thread(() -> {
 			    try {
 				OutputStream os = process.getOutputStream();
-				CopyUtilities.copyStream(is, os);
+				// CopyUtilities.copyStream(is, os);
+				is.transferTo(os);
 				os.close();
 			    } catch (IOException eio) {
 				System.err.println(eio.getMessage());

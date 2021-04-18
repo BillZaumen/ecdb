@@ -170,7 +170,7 @@ public class DryrunSMTPAgent extends SMTPAgent {
 	props.put("recipients.html", sb.toString().getBytes(UTF8));
 	EmbeddedWebServer ews = new
 	    EmbeddedWebServer(InetAddress.getLoopbackAddress(),
-			      0, 48, 2, false);
+			      0, 48, 2, null);
 	try {
 	    int port = ews.getPort();
 	    ews.add("/", PropertiesWebMap.class, props, null,
