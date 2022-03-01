@@ -362,19 +362,12 @@ $(JROOT_JAVADOCS)/index.html: $(JROOT_JARDIR)/ecdb.jar $(DIAGRAMS) \
 # ---------------------INSTALL -------------------
 #
 install-lib: all
-	install -d $(BIN)
-	install -d $(MANDIR)
 	install -d $(ECDBDIR)
 	install -d $(JARDIRECTORY)
-	install -d $(MANDIR)/man1
-	install -d $(MANDIR)/man5
 	install -m 0644 $(JROOT_JARDIR)/ecdb.jar \
 		$(JARDIRECTORY)/ecdb-$(VERSION).jar
 	install -m 0644 $(JROOT_JARDIR)/ecdb-dryrun.jar \
 		$(JARDIRECTORY)/ecdb-dryrun-$(VERSION).jar;
-	install -m 0755 $(JROOT_BIN)/ecdb $(BIN)
-	install -m 0644 $(JROOT_MANDIR)/man1/ecdb.1.gz $(MANDIR)/man1
-	install -m 0644 $(JROOT_MANDIR)/man5/ecdb.5.gz $(MANDIR)/man5
 
 install-javamail: all
 	install -d $(JARDIRECTORY)
@@ -410,6 +403,13 @@ install-doc: $(JROOT_JAVADOCS)/index.html
 		done
 
 install-desktop: all
+	install -d $(BIN)
+	install -d $(MANDIR)
+	install -d $(MANDIR)/man1
+	install -d $(MANDIR)/man5
+	install -m 0755 $(JROOT_BIN)/ecdb $(BIN)
+	install -m 0644 $(JROOT_MANDIR)/man1/ecdb.1.gz $(MANDIR)/man1
+	install -m 0644 $(JROOT_MANDIR)/man5/ecdb.5.gz $(MANDIR)/man5
 	install -d $(APP_ICON_DIR)
 	install -d $(MIME_ICON_DIR)
 	install -d $(MIMEDIR)

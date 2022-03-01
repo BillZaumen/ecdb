@@ -2,7 +2,7 @@
 Encoding=UTF-8
 Name=ECDB
 GenericName=Event-Calendar Database
-Comment=Use an even-calendar databse
+Comment=Use an event-calendar databse
 Exec=ecdb %f
 TryExec=ecdb
 MimeType=application/x.ecdb-config
