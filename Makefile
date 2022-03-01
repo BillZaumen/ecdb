@@ -18,6 +18,11 @@ JAVA_VERSION = 11
 
 include VersionVars.mk
 
+#
+# Set DARKMODE to --darkmode to turn on dark mode.
+#
+DARKMODE =
+
 APPS_DIR = apps
 MIMETYPES_DIR = mimetypes
 
@@ -334,7 +339,10 @@ $(JROOT_JAVADOCS)/index.html: $(JROOT_JARDIR)/ecdb.jar $(DIAGRAMS) \
 		src/overview.html src/description.html
 	rm -rf $(JROOT_JAVADOCS)
 	mkdir -p $(JROOT_JAVADOCS)
+	styleoption=`[ -z "$(DARKMODE)" ] && echo \
+		|| echo --main-stylesheet stylesheet.css`; \
 	javadoc -d $(JROOT_JAVADOCS) --module-path BUILD \
+		$$styleoption \
 		--module-source-path src \
 		--add-modules $(JDOC_MODULES) \
 		-link file:///usr/share/doc/openjdk-$(JAVA_VERSION)-doc/api \
