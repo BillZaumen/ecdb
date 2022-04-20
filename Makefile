@@ -461,6 +461,8 @@ install-pop:
 	install -m 0644 -T $(SOURCE_FILE_ICON) \
 		$(MIME_POPICON_DIR)/$(TARGET_FILE_ICON)
 	install -m 0644 -T $(SOURCEICON) $(APP_POPICON_DIR)/$(TARGETICON)
+
+saved-install-pop-actions:
 	for i in $(POPICON_WIDTHS) ; do \
 		install -d $(POPICON_DIR)/$${i}x$${i}/$(APPS_DIR) ; \
 		inkscape -w $$i --export-filename=tmp.png $(SOURCEICON) ; \
@@ -476,7 +478,6 @@ install-pop:
 		  $(POPICON_DIR)/$${i}x$${i}@2x/$(APPS_DIR)/$(TARGETICON_PNG); \
 		rm tmp.png ; \
 	done
-
 	for i in $(POPICON_WIDTHS) ; do \
 	    install -d $(POPICON_DIR)/$${i}x$${i}/$(MIMETYPES_DIR) ; \
 	done;
