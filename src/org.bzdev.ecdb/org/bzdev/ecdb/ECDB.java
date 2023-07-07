@@ -99,6 +99,8 @@ public class ECDB implements AutoCloseable {
     /**
      * Constructor given a configuration file.
      * @param file the configuration file
+     * @throws IOException if an IO error occured
+     * @throws ECDBException for an ECDB-specific error
      */
     public ECDB(File file) throws IOException, ECDBException {
 	setup(file);
@@ -108,6 +110,8 @@ public class ECDB implements AutoCloseable {
     /**
      * Constructor given configuration properties.
      * @param properties the properties
+     * @throws IOException if an IO error occured
+     * @throws ECDBException for an ECDB-specific error
      */
     public ECDB(Properties properties) throws IOException, ECDBException {
 	if (properties == null) {
@@ -386,6 +390,7 @@ public class ECDB implements AutoCloseable {
     /**
      * Get a database connection.
      * @return a connection
+     * @throws SQLException if an SQL error occurred
      */
     public Connection getConnection() throws SQLException {
 	return getConnection(false);
@@ -421,6 +426,7 @@ public class ECDB implements AutoCloseable {
 
     /**
      * Close this ECDB session.
+     * @throws SQLException if an SQL error occurred
      */
     public void close() throws SQLException {
 	Iterator<Connection> it = connections.iterator();
@@ -474,6 +480,8 @@ public class ECDB implements AutoCloseable {
      * @param useEmail true if the recipient's email address will be used;
      *        false if the MMS email address for the recipient's cell phone
      *        is used.
+     * @return the full email address
+     * @throws SQLException if an SQL error occurred
      */
     public String getFullEmailAddress(Connection conn, int userID,
 				      boolean useEmail)
@@ -542,6 +550,8 @@ public class ECDB implements AutoCloseable {
      * This method uses information in the configuration file
      * to create a database's tables and, when possible, the
      * database itself.
+     * @throws IOException if an IO error occurred
+     * @throws SQLException if an SQL error occurred
      */
     public void createDB() throws IOException, SQLException
     {
@@ -712,6 +722,8 @@ public class ECDB implements AutoCloseable {
     /**
      * Configure a database to allow roles specified in the
      * configuration file.
+     * @throws IOException if an IO error occurred
+     * @throws SQLException if an SQL error occurred
      */
     public void allowRoles() throws IOException, SQLException
     {
@@ -746,6 +758,8 @@ public class ECDB implements AutoCloseable {
 
     /**
      * Create a database's ECDB tables.
+     * @throws IOException if an IO error occurred
+     * @throws SQLException if an SQL error occurred
      */
     public void createTables() throws IOException, SQLException
     {
@@ -962,6 +976,7 @@ public class ECDB implements AutoCloseable {
      * Add a cellphone carrier.
      * @param conn the database connection
      * @param carrier the carrier's name
+     * @throws SQLException if an SQL error occurred
      */
     public void addCarrier(Connection conn, String carrier)
 	throws SQLException
@@ -995,6 +1010,7 @@ public class ECDB implements AutoCloseable {
      * Add  cellphone carriers.
      * @param conn the database connection
      * @param carriers an array containing the carrier's name
+     * @throws SQLException if an SQL error occurred
      */
     public void addCarrier(Connection conn, String[] carriers)
 	throws SQLException
@@ -1030,6 +1046,7 @@ public class ECDB implements AutoCloseable {
      * Delete a carrier by ID.
      * @param conn the database connection
      * @param carrierID the carrier's ID
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteCarrier(Connection conn, int carrierID)
 	throws SQLException
@@ -1059,6 +1076,7 @@ public class ECDB implements AutoCloseable {
      * Delete a carrier by name.
      * @param conn the database connection
      * @param carrier the carrier's name
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteCarrier(Connection conn, String carrier)
 	throws SQLException
@@ -1107,6 +1125,7 @@ public class ECDB implements AutoCloseable {
      * Delete carriers by name.
      * @param conn the database connection
      * @param carriers an array containing the names of the carriers to delete
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteCarrier(Connection conn, String[] carriers)
 	throws SQLException
@@ -1158,6 +1177,7 @@ public class ECDB implements AutoCloseable {
      * Delete carriers by ID.
      * @param conn the database connection
      * @param carrierIDs an array containing the IDs of the carriers to delete
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteCarrier(Connection conn, int[] carrierIDs)
 	throws SQLException
@@ -1192,6 +1212,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @return an array, each element of which specifies a carrier ID and
      *         the corresponding name
+     * @throws SQLException if an SQL error occurred
      */
     public CarrierLabeledID[] listCarrierLabeledIDs(Connection conn)
 	throws SQLException
@@ -1215,6 +1236,7 @@ public class ECDB implements AutoCloseable {
      *        by a {@link CarrierLabeledID}; false if the table contains
      *        only a carrier ID in each row
      * @return a table.
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listCarriers(Connection conn, String[] patterns, boolean full)
@@ -1285,6 +1307,7 @@ public class ECDB implements AutoCloseable {
      *        by the carrier name; false if the table contains
      *        only a carrier ID in each row
      * @return a table.
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listCarriers(Connection conn, int[] ids, boolean full)
@@ -1347,6 +1370,8 @@ public class ECDB implements AutoCloseable {
      * @param carrier the carrier name
      * @return the carrier ID corresponding to a carrier name; -1 if there
      *         is none.
+     * @throws IOException if an IO error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     int findCarrier(Connection conn, String carrier)
 	throws SQLException, IllegalArgumentException
@@ -1373,6 +1398,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param carrierID a carrierID
      * @param carrierName the new carrier name
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void setCarrier(Connection conn, int carrierID, String carrierName)
 	throws IllegalArgumentException, SQLException
@@ -1440,6 +1467,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if the second row in the table is a carrier labeled-ID;
      *             false if it is a carrier ID
      * @return a table containing matching entries
+     * @throws SQLException if an SQL error occurred
      */
     Vector<Vector<Object>> listCarrierMap(Connection conn,
 					  String countryPrefix,
@@ -1508,6 +1536,7 @@ public class ECDB implements AutoCloseable {
      * @param carrierID the carrier ID
      * @return the email domain used for MMS messages sent via email; null
      *         if there is none
+     * @throws SQLException if an SQL error occurred
      */
     public String getCarrierDomain(Connection conn, String countryPrefix,
 				   int carrierID)
@@ -1538,6 +1567,8 @@ public class ECDB implements AutoCloseable {
      * @param carrierID the carrier ID
      * @param domain the domain name for the email gateway used to forward
      *        an email to a carrier's MMS service
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void setCarrierMapping(Connection conn, String countryPrefix,
 				  int carrierID, String domain)
@@ -1555,6 +1586,8 @@ public class ECDB implements AutoCloseable {
      *        an email to a carrier's MMS service
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void setCarrierMapping(Connection conn, String countryPrefix,
 				  int carrierID, String domain,
@@ -1631,6 +1664,7 @@ public class ECDB implements AutoCloseable {
      * @param countryPrefix the user's country prefix (1 for the U.S.)
      * @param cellNumber the user's cell phone number
      * @param carrierID the ID for the user's cell phone carrier
+     * @throws SQLException if an SQL error occurred
      */
     public void addUserInfo(Connection conn,
 			    String firstName, String lastName,
@@ -1658,6 +1692,7 @@ public class ECDB implements AutoCloseable {
      * @param carrierID the ID for the user's cell phone carrier
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void addUserInfo(Connection conn,
 			    String firstName, String lastName,
@@ -1728,7 +1763,10 @@ public class ECDB implements AutoCloseable {
     }
 			    
     /**
-     *
+     * Delete user data.
+     * @param conn the database connection
+     * @param userID the user ID
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteUserInfo(Connection conn, int userID)
 	throws SQLException
@@ -1759,6 +1797,7 @@ public class ECDB implements AutoCloseable {
      * Each deletion must be confirmed.
      * @param conn the database connection
      * @param pattern a pattern used to find users to delete
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteUserInfo(Connection conn, String pattern)
 	throws SQLException
@@ -1772,6 +1811,7 @@ public class ECDB implements AutoCloseable {
      * @param pattern a pattern used to find users to delete
      * @param force true if all matching users should be deleted; false if
      *        each deletion must be confirmed
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteUserInfo(Connection conn, String pattern, boolean force)
 	throws SQLException
@@ -1846,6 +1886,7 @@ public class ECDB implements AutoCloseable {
      * Delete user data based on user IDs.
      * @param conn the database connection
      * @param userIDs the user IDs for the users that are to be deleted
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteUserInfo(Connection conn, int[] userIDs)
 	throws SQLException
@@ -1877,6 +1918,8 @@ public class ECDB implements AutoCloseable {
      * Get a user labeled ID for a specified user
      * @param conn the database connection
      * @param userID the user ID
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public UserLabeledID getUserLabeledID(Connection conn, int userID)
 	throws IllegalArgumentException, SQLException
@@ -1904,6 +1947,7 @@ public class ECDB implements AutoCloseable {
      * list the user labeled IDs for a specified pattern
      * @param conn the database connection
      * @param pattern the pattern
+     * @throws SQLException if an SQL error occurred
      */
     public UserLabeledID[] listUserLabeledIDs(Connection conn, String pattern)
 	throws SQLException
@@ -1937,6 +1981,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if a row contains all of the the publicly
      *        accessible columns; false if a rows contains only a
      *        user ID
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listUserInfo(Connection conn, String pattern, boolean full)
@@ -2098,6 +2143,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param userID the user's user id
      * @return the user's key map
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      * @see TemplateProcessor
      */
     public TemplateProcessor.KeyMap getUserKeyMap(Connection conn, int userID)
@@ -2156,6 +2203,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if a row contains all of the the publicly
      *        accessible columns; false if a rows contains only a
      *        user ID
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listUserInfo(Connection conn, int[] ids, boolean full)
@@ -2251,6 +2299,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param pattern a pattern to match
      * @return the user ID
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     int findUserInfo(Connection conn, String pattern)
 	throws SQLException, IllegalArgumentException
@@ -2326,6 +2376,8 @@ public class ECDB implements AutoCloseable {
      *        with the email address in angle brackets
      *        false if the email address alone is returned
      * @return the email address
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public String getUserCellphoneEmail(Connection conn, int userID,
 					boolean full)
@@ -2388,6 +2440,7 @@ public class ECDB implements AutoCloseable {
      *        -1 if ignored
      * @param status the user's status - ACTIVE, NOTACTIVE, CANCELLED;
      *        null if ignored
+     * @throws SQLException if an SQL error occurred
      */
     public void setUserInfo(Connection conn, int userID,
 			    String firstName, String lastName,
@@ -2424,6 +2477,7 @@ public class ECDB implements AutoCloseable {
      *        null if ignored
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setUserInfo(Connection conn, int userID,
 			    String firstName, String lastName,
@@ -2604,6 +2658,7 @@ public class ECDB implements AutoCloseable {
      * @param summary a description of the owner
      * @param idomain the internet domain name associated with the
      *        owner
+     * @throws SQLException if an SQL error occurred
      */
     public void addOwner(Connection conn,
 			String label, String summary,
@@ -2673,6 +2728,7 @@ public class ECDB implements AutoCloseable {
      * Delete an entry from the owner table.
      * @param conn the database connection
      * @param ownerID the owner ID for the entry
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteOwner(Connection conn, int ownerID)
 	throws SQLException
@@ -2702,6 +2758,7 @@ public class ECDB implements AutoCloseable {
      * Delete an entry from the owner table given a search pattern.
      * @param conn the database connection
      * @param pattern a search pattern for the owner
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteOwner(Connection conn, String pattern)
 	throws SQLException
@@ -2716,6 +2773,7 @@ public class ECDB implements AutoCloseable {
      * @param pattern a search pattern for the owner
      * @param force true if all matching users should be deleted; false if
      *        each deletion must be confirmed
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteOwner(Connection conn, String pattern, boolean force)
 	throws SQLException
@@ -2783,6 +2841,7 @@ public class ECDB implements AutoCloseable {
      * Delete an entry from the owner table a list of owner IDs.
      * @param conn the database connection
      * @param ownerIDs the owner IDs for the entries
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteOwner(Connection conn, int[] ownerIDs)
 	throws SQLException
@@ -2817,6 +2876,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @return a list, starting with "[ All ]", followed by the labels
      *         for every owner
+     * @throws SQLException if an SQL error occurred
      */
     public Object[] listOwnerLabels(Connection conn) throws SQLException {
 	// This returns a string because JOptionPane 'show' methods
@@ -2839,6 +2899,7 @@ public class ECDB implements AutoCloseable {
      * to select an owner.
      * @param conn the database connection
      * @return a list containing owner labeled IDs for every owner
+     * @throws SQLException if an SQL error occurred
      */
     public OwnerLabeledID[] listOwnerLabeledIDs(Connection conn)
 	throws SQLException
@@ -2867,6 +2928,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if a row contains all of the the publicly
      *        accessible columns; false if a rows contains only an
      *        owner ID
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listOwners(Connection conn, String[] patterns, boolean full)
@@ -2954,6 +3016,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if a row contains all of the the publicly
      *        accessible columns; false if a rows contains only an
      *        owner ID
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listOwners(Connection conn, int[] ids, boolean full)
@@ -3019,6 +3082,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param pattern the pattern
      * @return the corresponding ownerID; -1 if there is no match
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     int findOwner(Connection conn, String pattern)
 	throws SQLException, IllegalArgumentException
@@ -3056,6 +3121,7 @@ public class ECDB implements AutoCloseable {
      * @param label the label; null if ignored
      * @param summary the summary; null if ignored
      * @param idomain the internet domain name; null if ignored
+     * @throws SQLException if an SQL error occurred
      */
     public void setOwner(Connection conn, int ownerID,
 			 String label, String summary, String idomain)
@@ -3073,6 +3139,7 @@ public class ECDB implements AutoCloseable {
      * @param idomain the internet domain name; null if ignored
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setOwner(Connection conn, int ownerID,
 			 String label, String summary,
@@ -3145,6 +3212,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param label the label
      * @param location a description of the location
+     * @throws SQLException if an SQL error occurred
      */
     public void addLocation(Connection conn,
 			    String label, String location)
@@ -3161,6 +3229,7 @@ public class ECDB implements AutoCloseable {
      * @param location a description of the location
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void addLocation(Connection conn, String label, String location,
 			    boolean commit)
@@ -3202,6 +3271,7 @@ public class ECDB implements AutoCloseable {
      * Delete a row from the location table
      * @param conn the database connection
      * @param locationID the location ID
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteLocation(Connection conn, int locationID)
 	throws SQLException
@@ -3231,6 +3301,7 @@ public class ECDB implements AutoCloseable {
      * Delete rows from the location table given a pattern.
      * @param conn the database connection
      * @param pattern a search pattern
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteLocation(Connection conn, String pattern)
 	throws SQLException
@@ -3245,6 +3316,7 @@ public class ECDB implements AutoCloseable {
      * @param pattern a search pattern
      * @param force true if all entries that match the pattern should be
      *             automatically deleted; false if the deletion is interactive
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteLocation(Connection conn, String pattern, boolean force)
 	throws SQLException
@@ -3313,6 +3385,7 @@ public class ECDB implements AutoCloseable {
      * Delete rows from the location table given a list of location IDs
      * @param conn the database connection
      * @param locationIDs the IDs of the locations to be deleted
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteLocation(Connection conn, int[] locationIDs)
 	throws SQLException
@@ -3347,6 +3420,7 @@ public class ECDB implements AutoCloseable {
      * should be selected.
      * @param conn the database connection
      * @return the location labels, prefaced with the "[ All ]"
+     * @throws SQLException if an SQL error occurred
      */
     public Object[] listLocationLabels(Connection conn) throws SQLException {
 	// This returns a string because JOptionPane 'show' methods
@@ -3367,6 +3441,7 @@ public class ECDB implements AutoCloseable {
      * List the location labeled IDs for all locations in the location table.
      * @param conn the database connection
      * @return the location labeled IDs
+     * @throws SQLException if an SQL error occurred
      */
     public LocationLabeledID[] listLocationLabeledIDs(Connection conn)
 	throws SQLException
@@ -3413,6 +3488,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if a row contains all of the the publicly
      *        accessible columns; false if a rows contains only a
      *        location ID
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listLocations(Connection conn, String[] patterns, boolean full)
@@ -3498,6 +3574,7 @@ public class ECDB implements AutoCloseable {
      *        accessible columns; false if a rows contains only a
      *        location ID
      * @return a table whose rows are described above
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listLocations(Connection conn, int[] ids, boolean full)
@@ -3561,6 +3638,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param pattern the pattern
      * @return the location ID; -1 if there is no match
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     int findLocation(Connection conn, String pattern)
 	throws SQLException, IllegalArgumentException
@@ -3598,6 +3677,7 @@ public class ECDB implements AutoCloseable {
      * @param label the label; null if this field is not changed
      * @param location the location description; null if this field is
      *        not changed
+     * @throws SQLException if an SQL error occurred
      */
     public void setLocation(Connection conn, int locationID,
 			    String label, String location)
@@ -3614,6 +3694,7 @@ public class ECDB implements AutoCloseable {
      * @param label the label; null if this field is not changed
      * @param location the location description; null if this field is
      *        not changed
+     * @throws SQLException if an SQL error occurred
      */
     public void setLocation(Connection conn, int locationID,
 			    String label, String location,
@@ -3686,6 +3767,8 @@ public class ECDB implements AutoCloseable {
      * @param forPhone true if the alarm applies calendar appointments that
      *        will be sent to the user's cell phone; false if no message
      *        is to be sent
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
@@ -3716,6 +3799,8 @@ public class ECDB implements AutoCloseable {
      *        is to be sent
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
@@ -3770,6 +3855,8 @@ public class ECDB implements AutoCloseable {
      * @param eventTime a possible time for an event
      * @param weekday true if eventTime refers to a weekday; false for a
      *        weekend
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday)
@@ -3819,6 +3906,8 @@ public class ECDB implements AutoCloseable {
      *        weekend; null if not considered; null null for either possibility
      * @param force true if all entries that match the pattern should be
      *             automatically deleted; false if the deletion is interactive
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteFirstAlarms(Connection conn, int userID, int ownerID,
 				  int locationID, Time eventTime,
@@ -4243,6 +4332,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if a row contains all of the the publicly
      *        accessible columns; false if a rows contains only a
      *        location ID
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listFirstAlarms(Connection conn, int userID, int ownerID,
@@ -4342,6 +4432,7 @@ public class ECDB implements AutoCloseable {
      * @param alarmTime the alarm time; null to ignore
      * @param forEmail the 'for email' flag; null to ignore
      * @param forPhone the 'for phone' flag; null to ignore
+     * @throws SQLException if an SQL error occurred
      */
     public void setFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
@@ -4371,6 +4462,7 @@ public class ECDB implements AutoCloseable {
      * @param forPhone the 'for phone' flag; null to ignore
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setFirstAlarm(Connection conn, int userID, int ownerID,
 			      int locationID, Time eventTime, boolean weekday,
@@ -4451,6 +4543,8 @@ public class ECDB implements AutoCloseable {
      *        alarm
      * @param forEmail the 'for email' flag
      * @param forPhone the 'for phone' flag
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
@@ -4474,6 +4568,8 @@ public class ECDB implements AutoCloseable {
      * @param forPhone the 'for phone' flag
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
@@ -4513,6 +4609,8 @@ public class ECDB implements AutoCloseable {
      * @param userID the userID
      * @param ownerID the owner ID
      * @param locationID the location ID
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void deleteSecondAlarm(Connection conn, int userID, int ownerID,
 			      int locationID)
@@ -4549,6 +4647,8 @@ public class ECDB implements AutoCloseable {
      * @param locationID the location ID; -1 for any location
      * @param force true if all entries that match the pattern should be
      *             automatically deleted; false if the deletion is interactive
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void deleteSecondAlarms(Connection conn, int userID, int ownerID,
 				   int locationID, boolean force)
@@ -4640,6 +4740,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if the userID, ownerID, and locationID
      *       are represented by labeled IDs; false if they are
      *       represented by their integer values
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listSecondAlarms(Connection conn, int userID, int ownerID,
@@ -4708,6 +4809,7 @@ public class ECDB implements AutoCloseable {
      *        an email address; false if it does not; null indicates no change
      * @param forPhone true if this alarm appears in a calendar sent to
      *        a cell phone; false if it does not; null indicates no change
+     * @throws SQLException if an SQL error occurred
      */
     public void setSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
@@ -4734,6 +4836,7 @@ public class ECDB implements AutoCloseable {
      *        a cell phone; false if it does not; null indicates no change
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setSecondAlarm(Connection conn, int userID, int ownerID,
 			       int locationID, int offset,
@@ -4807,6 +4910,8 @@ public class ECDB implements AutoCloseable {
      * @param ownerID the owner ID; -1 for any owner
      * @param peDefault true if the user normally attends pre-events for
      *        the owner; false otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault)
@@ -4825,6 +4930,8 @@ public class ECDB implements AutoCloseable {
      *        the owner; false otherwise
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault, boolean commit)
@@ -4860,6 +4967,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param userID the userID
      * @param ownerID the owner ID
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void deletePreEventDefault(Connection conn, int userID, int ownerID)
 	throws SQLException, IllegalArgumentException
@@ -4894,6 +5003,8 @@ public class ECDB implements AutoCloseable {
      * @param ownerID the owner ID; -1 for all owners
      * @param force true if all entries that match the pattern should be
      *             automatically deleted; false if the deletion is interactive
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void deletePreEventDefaults(Connection conn, int userID, int ownerID,
 				   boolean force)
@@ -4975,6 +5086,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if the userID, ownerID, and locationID
      *       are represented by labeled IDs; false if they are
      *       represented by their integer values
+     * @throws SQLException if an SQL error occurred
      */
    public Vector<Vector<Object>>
 	listPreEventDefaults(Connection conn, int userID, int ownerID,
@@ -5036,6 +5148,7 @@ public class ECDB implements AutoCloseable {
      * @param ownerID the owner ID;
      * @param peDefault true if the user normally attends pre-events for
      *        the owner; false otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault)
@@ -5058,6 +5171,7 @@ public class ECDB implements AutoCloseable {
      *        the owner; false otherwise
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setPreEventDefault(Connection conn, int userID, int ownerID,
 				   boolean peDefault, boolean commit)
@@ -5093,6 +5207,8 @@ public class ECDB implements AutoCloseable {
      * @param userID the userID
      * @param ownerID the owner ID
      * @return true if the prev-event default is true; false otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public boolean getPreEventDefault(Connection conn, int userID, int ownerID)
 	throws SQLException, IllegalArgumentException
@@ -5122,6 +5238,8 @@ public class ECDB implements AutoCloseable {
      * @param ownerID the owner ID
      * @param label the event's label
      * @param description the event's description
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addEvent(Connection conn, int ownerID,
 			    String label, String description)
@@ -5139,6 +5257,8 @@ public class ECDB implements AutoCloseable {
      * @param description the event's description
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addEvent(Connection conn, int ownerID,
 			 String label, String description,
@@ -5185,6 +5305,7 @@ public class ECDB implements AutoCloseable {
      * Delete a row from the event table.
      * @param conn the database connection
      * @param eventID  the event ID for the row
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteEvent(Connection conn, int eventID)
 	throws SQLException
@@ -5214,6 +5335,7 @@ public class ECDB implements AutoCloseable {
      * Delete rows whose labels match a patter from the event table.
      * @param conn the database connection
      * @param pattern a pattern for the event's label
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteEvent(Connection conn, String pattern)
 	throws SQLException
@@ -5229,6 +5351,7 @@ public class ECDB implements AutoCloseable {
      * @param pattern a pattern for the event's label
      * @param force true if all entries that match the pattern should be
      *             automatically deleted; false if the deletion is interactive
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteEvent(Connection conn, String pattern, boolean force)
 	throws SQLException
@@ -5296,6 +5419,7 @@ public class ECDB implements AutoCloseable {
      * Delete rows from the event table.
      * @param conn the database connection
      * @param eventIDs  the event IDs that the rows will match
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteEvent(Connection conn, int[] eventIDs)
 	throws SQLException
@@ -5329,6 +5453,7 @@ public class ECDB implements AutoCloseable {
      * @param ownerID the owner ID; -1 for all owners
      * @return an array whose contents are string containing labels, after
      *         an initial element equal to "[ All ]"
+     * @throws SQLException if an SQL error occurred
      */
     public Object[] listEventLabels(Connection conn, int ownerID)
 	throws SQLException
@@ -5358,6 +5483,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param ownerID the owner ID; -1 for all owners
      * @return an array provides the matching event labeled IDs
+     * @throws SQLException if an SQL error occurred
      */
     public EventLabeledID[] listEventLabeledIDs(Connection conn, int ownerID)
 	throws SQLException
@@ -5394,6 +5520,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if full rows are returned; false if each row
      *        contains only an event ID
      * @return the table rows matching the specified owners
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listEventsForOwner(Connection conn, int ownerID, boolean full)
@@ -5443,6 +5570,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if full rows are returned; false if each row
      *        contains only an event ID
      * @return the table rows matching the specified patterms
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listEvents(Connection conn, String[] patterns, boolean full)
@@ -5537,6 +5665,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if full rows are returned; false if each row
      *        contains only an event ID
      * @return the table rows matching the specified event IDs
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listEvents(Connection conn, int[] ids, boolean full)
@@ -5657,6 +5786,7 @@ public class ECDB implements AutoCloseable {
      * @param ownerID the new owner ID; -1 to ignore
      * @param label the new label; null to ignore
      * @param description the new description; null to ignore
+     * @throws SQLException if an SQL error occurred
      */
     public void setEvent(Connection conn, int eventID, int ownerID,
 			 String label, String description)
@@ -5675,6 +5805,7 @@ public class ECDB implements AutoCloseable {
      * @param description the new description; null to ignore
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setEvent(Connection conn, int eventID, int ownerID,
 			 String label, String description,
@@ -5754,6 +5885,8 @@ public class ECDB implements AutoCloseable {
      * @param endTime the ending time for this event instance
      * @param status TENTATIVE, CONFIRMED, CANCELLED or null if a status
      *        is not explicitly supplied
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addEventInstance(Connection conn,
 				 int eventID,
@@ -5790,6 +5923,8 @@ public class ECDB implements AutoCloseable {
      *        is not explicitly supplied
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addEventInstance(Connection conn,
 				 int eventID,
@@ -5878,6 +6013,7 @@ public class ECDB implements AutoCloseable {
      * Delete a row from the event-instance table.
      * @param conn the database connection
      * @param instanceID the event-instance ID for the row to delete
+     * @throws SQLException if an SQL error occurred
      */
     public boolean deleteEventInstance(Connection conn, int instanceID)
 	throws SQLException
@@ -5909,6 +6045,7 @@ public class ECDB implements AutoCloseable {
      * Delete all rows from the event-instance table whose state is
      * "CANCELLED".
      * @param conn the database connection
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteCancelledEventInstances(Connection conn)
 	throws SQLException
@@ -5938,6 +6075,7 @@ public class ECDB implements AutoCloseable {
      * Delete rows from the event-instance table.
      * @param conn the database connection
      * @param instanceIDs the event-instance IDs for the rows to delete
+     * @throws SQLException if an SQL error occurred
      */
     public int deleteEventInstances(Connection conn, int[] instanceIDs)
 	throws SQLException
@@ -5977,6 +6115,7 @@ public class ECDB implements AutoCloseable {
      * @param eventID an event; -1 for any event
      * @param locationID an location ID; -1 for any location
      * @return an array of instance labeled IDs
+     * @throws SQLException if an SQL error occurred
      */
     public InstanceLabeledID[] listInstanceLabeledIDs(Connection conn,
 						      int ownerID,
@@ -6003,6 +6142,7 @@ public class ECDB implements AutoCloseable {
      * @param all true if the first instance indicates all instances;
      *        false otherwise
      * @return an array of instance labeled IDs
+     * @throws SQLException if an SQL error occurred
      */
     public InstanceLabeledID[] listInstanceLabeledIDs(Connection conn,
 						      int ownerID,
@@ -6051,6 +6191,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a vector of rows
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listEventInstances(Connection conn, int ownerID,
@@ -6162,6 +6303,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a vector of rows
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listEventInstances(Connection conn, int ownerID, int locationID,
@@ -6290,6 +6432,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a vector of rows
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listEventInstances(Connection conn, int[] ids, boolean full)
@@ -6410,6 +6553,8 @@ public class ECDB implements AutoCloseable {
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a vector of rows
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
    public Vector<Vector<Object>>
 	listEventInstance(Connection conn, int instanceID, boolean full)
@@ -6488,6 +6633,7 @@ public class ECDB implements AutoCloseable {
      * @param startDate the start date for an event instance; null for any
      * @param startTime the start time for an event instance; null for any
      * @return and instance ID; -1 if there is no match
+     * @throws SQLException if an SQL error occurred
      */
     int findEventInstance(Connection conn, int eventID, int locationID,
 			   java.sql.Date startDate, java.sql.Time startTime)
@@ -6570,6 +6716,8 @@ public class ECDB implements AutoCloseable {
      * @param startTime the start time for an event instance; null if ignored
      * @param endDate the end date for an event instance; null if ignored
      * @param endTime the end time for an event instance; null if ignored
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void setEventInstance(Connection conn, int instanceID,
 				 int eventID, int locationID,
@@ -6603,6 +6751,8 @@ public class ECDB implements AutoCloseable {
      * @param endTime the end time for an event instance; null if ignored
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void setEventInstance(Connection conn, int instanceID,
 				 int eventID, int locationID,
@@ -6752,6 +6902,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param ownerID an owner ID; -1 for any owner
      * @param label a short string naming the series
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addSeries(Connection conn, int ownerID, String label)
 	throws SQLException, IllegalArgumentException
@@ -6767,6 +6919,8 @@ public class ECDB implements AutoCloseable {
      * @param label a short string naming the series
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void addSeries(Connection conn, int ownerID, String label,
 			  boolean commit)
@@ -6807,6 +6961,7 @@ public class ECDB implements AutoCloseable {
      * Delete a series from the series table.
      * @param conn the database connection
      * @param seriesID the series ID
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteSeries(Connection conn, int seriesID)
 	throws SQLException
@@ -6838,6 +6993,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param ownerID  an ownerID used to search for a series
      * @param pattern a pattern used to match the label for the series
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteSeries(Connection conn, int ownerID, String pattern)
 	throws SQLException
@@ -6854,6 +7010,7 @@ public class ECDB implements AutoCloseable {
      *        for any label
      * @param force true if all entries that match the pattern should be
      *             automatically deleted; false if the deletion is interactive
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteSeries(Connection conn, int ownerID, String pattern,
 			     boolean force)
@@ -6943,6 +7100,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param ownerIDs a list of owner IDs for those series that
      *        should be deleted
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteSeries(Connection conn, int[] ownerIDs)
 	throws SQLException
@@ -6978,6 +7136,7 @@ public class ECDB implements AutoCloseable {
      * @param all true if there is an entry for all series matching the
      *        specified owner (or all owners); false if there is no entry
      *        for all series
+     * @throws SQLException if an SQL error occurred
      */
     public Object[] listSeriesLabels(Connection conn, int ownerID, boolean all)
 	throws SQLException
@@ -7010,6 +7169,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param ownerID the ownerID for the series that should be listed; -1
      *        for any owner
+     * @throws SQLException if an SQL error occurred
      */
     public SeriesLabeledID[] listSeriesLabeledIDs(Connection conn, int ownerID)
 	throws SQLException
@@ -7048,6 +7208,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return selected rows from the series table
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listSeries(Connection conn, int ownerID, String pattern, boolean full)
@@ -7125,6 +7286,7 @@ public class ECDB implements AutoCloseable {
      *        the labeled ID; false if just the series label should be
      *        included
      * @return a series labeled ID for the specified series ID
+     * @throws SQLException if an SQL error occurred
      */
     public SeriesLabeledID getSeriesLabeledID(Connection conn, int seriesID,
 					      boolean withOwner)
@@ -7166,6 +7328,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return a series labeled ID for the specified series ID
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listSeries(Connection conn, int[] ids, boolean full)
@@ -7240,6 +7403,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if all publicly readable fields are include; false
      *        if a row contains only the instance ID field
      * @return rows that match the specified series IDs
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listSeries(Connection conn, int seriesID, boolean full)
@@ -7311,6 +7475,8 @@ public class ECDB implements AutoCloseable {
      *        if ignored
      * @param pattern a pattern used to match labels
      * @return the series ID; -1 if there was not a match
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public int findSeries(Connection conn, int ownerID, String pattern)
 	throws SQLException, IllegalArgumentException
@@ -7368,6 +7534,7 @@ public class ECDB implements AutoCloseable {
      * @param seriesID the series ID for the row
      * @param ownerID the new ownerID; -1 if ignored
      * @param label the new label; null if ignored
+     * @throws SQLException if an SQL error occurred
      */
     public void setSeries(Connection conn, int seriesID,
 			  int ownerID, String label)
@@ -7385,6 +7552,7 @@ public class ECDB implements AutoCloseable {
      * @param label the new label; null if ignored
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
      */
     public void setSeries(Connection conn, int seriesID,
 			  int ownerID, String label, boolean commit)
@@ -7448,6 +7616,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param seriesID the series ID for the new row
      * @param instanceID the instanceID for the new row
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addSeriesInstance(Connection conn, int seriesID, int instanceID)
 	throws SQLException, IllegalArgumentException
@@ -7463,6 +7633,8 @@ public class ECDB implements AutoCloseable {
      * @param instanceID the instanceID for the new row
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addSeriesInstance(Connection conn, int seriesID, int instanceID,
 				  boolean commit)
@@ -7504,6 +7676,7 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param seriesID the series ID for the row; -1 for any
      * @param instanceID the instanceID for the row; -1 for any
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteSeriesInstance(Connection conn, int seriesID,
 				     int instanceID)
@@ -7520,6 +7693,7 @@ public class ECDB implements AutoCloseable {
      * @param instanceID the instanceID for the row; -1 for any
      * @param force true if all entries that match the pattern should be
      *             automatically deleted; false if the deletion is interactive
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteSeriesInstance(Connection conn, int seriesID,
 				     int instanceID, boolean force)
@@ -7610,6 +7784,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if the IDs are returned as labeled ids; false
      *        if returned as integers
      * @return a table of rows
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listSeriesInstance(Connection conn, int seriesID, int instanceID,
@@ -7676,6 +7851,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if the IDs are returned as labeled ids; false
      *        if returned as integers
      * @return a table of rows
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listSeriesInstanceByOwner(Connection conn, int seriesID, int ownerID,
@@ -7737,6 +7913,8 @@ public class ECDB implements AutoCloseable {
      * @param attendingPreEvent true if the user will attend any pre-event
      *        for the instance; false otherwise
      * @param seriesID the ID; -1 if there is none for the new row
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addAttendee(Connection conn, int userID, int instanceID,
 			    boolean attendingPreEvent, int seriesID)
@@ -7758,6 +7936,8 @@ public class ECDB implements AutoCloseable {
      * @param seriesID the ID; -1 if there is none for the new row
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void addAttendee(Connection conn, int userID, int instanceID,
 			    boolean attendingPreEvent, int seriesID,
@@ -7811,6 +7991,8 @@ public class ECDB implements AutoCloseable {
      * @param force true if all entries that match should be
      *        automatically deleted; false if the deletion is interactive
      *        when more than one rows were selected
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void deleteAttendee(Connection conn, int userID,
 			       int instanceID,
@@ -7927,6 +8109,7 @@ public class ECDB implements AutoCloseable {
      * @param full true if integer values are represented as labeled ids
      *        and the attendeeState as an enum; false if the values are
      *        integers and strings .
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<Vector<Object>>
 	listAttendees(Connection conn, int userID, int instanceID,
@@ -8015,6 +8198,8 @@ public class ECDB implements AutoCloseable {
      * @param seriesID the new series ID; -1 to ignore
      * @param attendeeState the new state of an attendee (ACTIVE,
      *        CANCELLING, or CANCELLED); null to ignore.
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void setAttendee(Connection conn, int userID, int instanceID,
 			    String attendeeState, int seriesID)
@@ -8034,6 +8219,8 @@ public class ECDB implements AutoCloseable {
      *        CANCELLING, or CANCELLED); null to ignore.
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws IllegalArgumentException if an argument is not allowed
+     * @throws SQLException if an SQL error occurred
      */
     public void setAttendee(Connection conn, int userID, int instanceID,
 			    String attendeeState, int seriesID,
@@ -8158,6 +8345,7 @@ public class ECDB implements AutoCloseable {
      *         that matches and event instance with a specified
      *         location ane event ID, where the corresponding event
      *         has a specified owner
+     * @throws SQLException if an SQL error occurred
      */
     public int getInstanceCount(Connection conn, int ownerID, int eventID,
 				int locationID, int instanceID)
@@ -8238,6 +8426,7 @@ public class ECDB implements AutoCloseable {
      * @param forEmail true for calendars associated with email;
      *        false for text messages
      * @return the UserCalendar objects
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<UserCalendars>
 	getNonAttendees(Connection conn, int ownerID, int eventID,
@@ -8329,6 +8518,7 @@ public class ECDB implements AutoCloseable {
      * @param calendarForEmail true for calendars associated with email;
      *        false for text messages
      * @return the UserCalendar objects
+     * @throws SQLException if an SQL error occurred
      */
     public Vector<UserCalendars>
 	getCalendars(Connection conn, int userID, int ownerID, int eventID,
@@ -8894,6 +9084,8 @@ public class ECDB implements AutoCloseable {
      * @param conn the database connection
      * @param userID the userID
      * @param seriesID the series ID
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void applySeries(Connection conn, int userID, int seriesID)
 	throws SQLException, IllegalArgumentException
@@ -8908,6 +9100,8 @@ public class ECDB implements AutoCloseable {
      * @param seriesID the series ID
      * @param commit true if the new changes should be committed; false
      *        otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IllegalArgumentException if an argument is not allowed
      */
     public void applySeries(Connection conn, int userID, int seriesID,
 			    boolean commit)
@@ -9458,6 +9652,7 @@ public class ECDB implements AutoCloseable {
      * @param headless true if ECDB is being run from the command line
      *        and will not open any windows, even if a window system is
      *        present
+     * @throws IOException if an IO error occurred
      */
     public static void copyToClipboard(Vector<byte[]> calendars,
 				       boolean headless)
@@ -9477,6 +9672,7 @@ public class ECDB implements AutoCloseable {
      * Copy a series of calendars to a directory.
      * @param dir the directory
      * @param calendars the calendars
+     * @throws IOException if an IO error occurred
      */
     public static void saveToDirectory(File dir, Vector<byte[]> calendars)
 	throws IOException
@@ -9549,7 +9745,7 @@ public class ECDB implements AutoCloseable {
 
     /**
      * Set the URL for the message template.
-     * @URL the url
+     * @param templateURL the url
      */
     public void setTemplateURL(URL templateURL) {
 	this.templateURL = templateURL;
@@ -9563,7 +9759,7 @@ public class ECDB implements AutoCloseable {
 
     /**
      * Set the URL for the alternative message template.
-     * @URL the url
+     * @param templateURL the url
      */
     public void setAltTemplateURL(URL templateURL) {
 	this.altTemplateURL = templateURL;
@@ -9620,6 +9816,8 @@ public class ECDB implements AutoCloseable {
      * @param preflight true if the user should be shown a representation of
      *        the messages in a web browser (e.g., to verify that the
      *        messages are formated or created as desired); false otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws Exception an  error occurred
      */
     public static boolean sendViaEmail(ECDB ecdb, Connection conn,
 				       Vector<UserCalendars> vector,
@@ -9724,6 +9922,8 @@ public class ECDB implements AutoCloseable {
      *        message
      * @param suppressCalendars true if calendars should not be attached
      *        to a message; false otherwise
+     * @throws SQLException if an SQL error occurred
+     * @throws IOException an IO error occurred
      */
     public static void dryrunForSend(ECDB ecdb, Connection conn,
 				     PrintWriter out,

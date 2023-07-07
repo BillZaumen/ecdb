@@ -16,6 +16,15 @@ JROOT := $(shell while [ ! -d src -a `pwd` != / ] ; do cd .. ; done ; pwd)
 
 JAVA_VERSION = 11
 
+JAVAC = javac --release $(JAVA_VERSION)
+JAVADOC = javadoc --release $(JAVA_VERSION) -public -protected  \
+	-Xdoclint:all,-missing,-html
+
+JAVADOC_VERSION = $(shell javadoc --version | sed -e 's/javadoc //' \
+		| sed -e 's/[.].*//')
+
+
+
 include VersionVars.mk
 
 #
@@ -254,7 +263,7 @@ $(ECDB_JSDIR)/doc-files/user.png: diagrams/user.dia
 $(JROOT_JARDIR)/ecdb.jar: $(FILES) $(PROPERTIES) $(RESOURCES) $(SETUP)
 	rm -f $(JROOT_JARDIR)/ecdb.jar
 	mkdir -p $(ECDB_JDIR)
-	javac -Xlint:unchecked -Xlint:deprecation \
+	$(JAVAC) -Xlint:unchecked -Xlint:deprecation \
 		-d mods/org.bzdev.ecdb -p $(JROOT_JARDIR) \
 		src/org.bzdev.ecdb/module-info.java $(JFILES)
 	cp $(PROPERTIES) $(ECDB_JDIR)
@@ -272,7 +281,7 @@ $(JROOT_JARDIR)/ecdb.jar: $(FILES) $(PROPERTIES) $(RESOURCES) $(SETUP)
 $(JROOT_JARDIR)/ecdb-javamail.jar: $(JMFILES) $(JROOT_JARDIR)/ecdb.jar
 	mkdir -p $(ECDBJM_JDIR)
 	rm -f $(JROOT_JARDIR)/ecdb-javamail.jar
-	javac -Xlint:unchecked -Xlint:deprecation \
+	$(JAVAC) -Xlint:unchecked -Xlint:deprecation \
 		-d mods/org.bzdev.ecdb.javamail	-p $(JROOT_JARDIR) \
 		src/org.bzdev.ecdb.javamail/module-info.java $(JMFILES)
 	mkdir -p $(ECDBJM_DIR)/META-INF/services
@@ -283,7 +292,7 @@ $(JROOT_JARDIR)/ecdb-javamail.jar: $(JMFILES) $(JROOT_JARDIR)/ecdb.jar
 $(JROOT_JARDIR)/ecdb-dryrun.jar: $(JDRFILES) $(JROOT_JARDIR)/ecdb.jar
 	mkdir -p $(ECDBDR_JDIR)
 	rm -f $(JROOT_JARDIR)/ecdb-dryrun.jar
-	javac -Xlint:unchecked -Xlint:deprecation \
+	$(JAVAC) -Xlint:unchecked -Xlint:deprecation \
 		-d mods/org.bzdev.ecdb.dryrun	-p $(JROOT_JARDIR) \
 		src/org.bzdev.ecdb.dryrun/module-info.java $(JDRFILES)
 	mkdir -p $(ECDBDR_DIR)/META-INF/services
@@ -335,23 +344,30 @@ javadocs: $(JROOT_JAVADOCS)/index.html
 JDOC_MODULES= org.bzdev.ecdb
 
 $(JROOT_JAVADOCS)/index.html: $(JROOT_JARDIR)/ecdb.jar $(DIAGRAMS) \
+		stylesheet$(JAVADOC_VERSION).css description.css \
 		$(ECDB_JSDIR)/doc-files/description.html \
 		src/overview.html src/description.html
 	rm -rf $(JROOT_JAVADOCS)
 	mkdir -p $(JROOT_JAVADOCS)
 	styleoption=`[ -z "$(DARKMODE)" ] && echo \
-		|| echo --main-stylesheet stylesheet.css`; \
-	javadoc -d $(JROOT_JAVADOCS) --module-path BUILD \
+		|| echo --main-stylesheet stylesheet$(JAVADOC_VERSION).css`; \
+	$(JAVADOC) -d $(JROOT_JAVADOCS) --module-path BUILD \
 		$$styleoption \
 		--module-source-path src \
 		--add-modules $(JDOC_MODULES) \
 		-link file:///usr/share/doc/openjdk-$(JAVA_VERSION)-doc/api \
 		-link file:///usr/share/doc/libbzdev-doc/api \
 		-overview src/overview.html \
-		--module $(JDOC_MODULES) | grep -E -v -e '^Generating' \
+		--module $(JDOC_MODULES) 2>&1 | grep -E -v -e '^Generating' \
 		| grep -E -v -e '^Copying file'
 	mkdir -p $(JROOT_JAVADOCS)/doc-files
-	cp src/description.html $(JROOT_JAVADOCS)/doc-files/description.html
+	cp description.css $(JROOT_JAVADOCS)/description.css
+	cp stylesheet11.css $(JROOT_JAVADOCS)
+	cp stylesheet17.css $(JROOT_JAVADOCS)
+	dstylesheet=`[ -z "$(DARKMODE)" ] && echo stylesheet.css \
+		|| echo stylesheet$(JAVADOC_VERSION).css` ; \
+	sed -e s/stylesheet.css/$$dstylesheet/  src/description.html \
+		> $(JROOT_JAVADOCS)/doc-files/description.html ; \
 	cp src/org.bzdev.ecdb/org/bzdev/ecdb/sql.xml \
 		$(JROOT_JAVADOCS)/doc-files/sql.xml.txt
 	for i in $(MOD_IMAGES) ; \

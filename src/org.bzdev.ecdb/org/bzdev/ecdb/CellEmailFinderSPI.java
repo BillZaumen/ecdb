@@ -16,7 +16,8 @@ public interface CellEmailFinderSPI {
      * Determine if a provide supports a particular prefix and
      * cell phone number.
      * @param prefix the prefix (e.g, "1" for the U.S.)
-     * @param cellNumber  the cell-phone number
+     * @param cellNumber the cell-phone number
+     * @return true if the provider supports this combination; false otherwise
      */
     boolean isSupported(String prefix, String cellNumber);
 
@@ -24,6 +25,7 @@ public interface CellEmailFinderSPI {
      * Get an instance of CellEmailFinder.
      * @param prefix the prefix (e.g, "1" for the U.S.)
      * @param cellNumber  the cell-phone number
+     * @return an instance of this interface for the given arguments
      */
     CellEmailFinder getInstance(String prefix, String cellNumber);
 

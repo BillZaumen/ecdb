@@ -23,6 +23,7 @@ public class CarrierEditor extends DefaultCellEditor {
      * Constructor.
      * @param ecdb the instance of ECDB to use.
      * @param conn a database connection obtained from ecdb
+     * @throws SQLException if an SQL error occurred
      */
     public CarrierEditor(ECDB ecdb, Connection conn) throws SQLException{
 	super(getComboBox(ecdb, conn));

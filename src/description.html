@@ -1,11 +1,12 @@
 <!DOCTYPE HTML>
 <HTML>
-<BODY>
-<P>
+<HEAD>
   <TITLE>Description of the ECDB module</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="../stylesheet.css">
 </HEAD>
 <BODY>
-<H2>Description of the ECDB module</H2>
+<H1>Description of the ECDB module</H1>
 <P>
   This module provides a single package, org.bzdev.ecdb, that provides
 an API for initializing and manipulating a relational database
@@ -203,27 +204,27 @@ and white printer) are references to tables from another diagram.
   The first diagram shows the tables for user data and some tables
 used to map cell phone numbers to the email address used by an MMS
 gateway provided by the user's wireless carrier:
-<CENTER>
-  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/user.png">
-</CENTER>
+<P style="text-align: center">
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/user.png"
+       ALT="diagram for user table and related tables">
 <P>
   The second diagram shows the tables for event owners, locations,
 events, and event instances:
-<CENTER>
-  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/owner.png">
-</CENTER>
+<P style="text-align: center">
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/owner.png"
+       ALT="diagram for the owner table">
 <P>
   The third diagram shows the tables for alarms and for a default
 choice for attending activities before an event:
-<CENTER>
-  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/timing.png">
-</CENTER>
+<P style="text-align: center">
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/timing.png"
+       ALT="diagram for timing">
 <P>
   The fourth diagram shows the attendee table and tables defining
 a series:
-<CENTER>
-  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/attendees.png">
-</CENTER>
+<P style="text-align: center">
+  <IMG SRC="../org.bzdev.ecdb/org/bzdev/ecdb/doc-files/attendees.png"
+       ALT="diagram for the attendee table">
 <P>
 There is a <A HREF="sql.xml.txt">default implementation</A> of these
 tables, represented as a set of Java properties saved in the standard
@@ -233,7 +234,7 @@ the manual page ecdb(5), allows a file with this format to be loaded
 as well as the default. When both implement the same key, the one
 provided in the user-defined file is used.
 <P>
-<A NAME="sqlxml"></A>
+<A ID="sqlxml"></A>
 Each property's key consists of a token naming some text, and
 optionally a token representing a database implementation, with these
 keys separated by a period.  The SQL keys are

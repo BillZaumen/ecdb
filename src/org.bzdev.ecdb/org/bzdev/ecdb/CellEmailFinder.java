@@ -23,13 +23,13 @@ public abstract class CellEmailFinder {
      * @param prefix the country prefix (e.g., 1 for the U.S.).
      * @param cellNumber the cell phone number, not including the
      *        prefix.
+     * @return the email address
      */
     public abstract String lookup(String prefix, String cellNumber);
 
     /**
      * Look up the cell phone number's email address for the number's
      * MMS gateway.
-
      * The ECDB database will be used to find a cached value and if
      * that is not available or has aged out, the method
      * {@link CellEmailFinder#lookup(String, String)} will be used to
@@ -38,6 +38,7 @@ public abstract class CellEmailFinder {
      * @param prefix the country prefix (e.g., 1 for the U.S.).
      * @param cellNumber the cell phone number, not including the
      *        prefix.
+     * @return the email address
      */
     public static String lookup(ECDB ecdb, Connection conn,
 				String prefix, String cellNumber,
@@ -138,6 +139,4 @@ public abstract class CellEmailFinder {
 	}
 	return emailAddr;
     }
-
-
 }
