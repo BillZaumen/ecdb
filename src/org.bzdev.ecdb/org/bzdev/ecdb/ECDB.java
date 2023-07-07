@@ -9418,7 +9418,7 @@ public class ECDB implements AutoCloseable {
 
     private static void hasArgTest(int ind, String[] argv) {
 	if (ind >= argv.length) {
-	    System.err.println("edbc: missing argument for "
+	    System.err.println("ecdb: missing argument for "
 			       + argv[ind-1]);
 	    System.exit(1);
 	}
