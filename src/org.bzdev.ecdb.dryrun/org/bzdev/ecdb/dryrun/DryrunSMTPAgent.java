@@ -168,10 +168,10 @@ public class DryrunSMTPAgent extends SMTPAgent {
     public boolean complete(JFrame frame, boolean preflight, Object... args) {
 	sb.append("</UL></BODY></HTML>\n");
 	props.put("recipients.html", sb.toString().getBytes(UTF8));
-	EmbeddedWebServer ews = new
-	    EmbeddedWebServer(InetAddress.getLoopbackAddress(),
-			      0, 48, 2, null);
+	EmbeddedWebServer ews = null;
 	try {
+	    ews = new
+		EmbeddedWebServer(InetAddress.getLoopbackAddress(), 0, 48, 2);
 	    int port = ews.getPort();
 	    ews.add("/", PropertiesWebMap.class, props, null,
 		    true, true, true);
@@ -188,7 +188,7 @@ public class DryrunSMTPAgent extends SMTPAgent {
 	    e.printStackTrace();
 	    boolean status = getStatus(frame, preflight);
 	    try {
-		ews.stop(2);
+		if (ews != null) ews.stop(2);
 	    } catch (Exception ee) {}
 	    return status;
 	} finally {
